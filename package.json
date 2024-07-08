@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "tsc && node ./dist/app.js",
+    "dev": "nodemon --watch src --ext ts --exec 'tsc && node ./dist/app.js'",
     "lint": "eslint . --ext .ts"
   },
   "author": "Slack Technologies, LLC",
@@ -33,6 +34,7 @@
     "eslint-config-airbnb-base": "~15.0.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-plugin-import": "~2.29.1",
+    "nodemon": "^3.1.4",
     "typescript": "^5.5.3"
   }
 }
