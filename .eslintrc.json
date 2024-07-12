@@ -17,9 +17,11 @@
   },
 
   "rules": {
+    "no-unused-vars": "warn",
     "object-curly-newline": "off",
     "camelcase": "off",
     "no-console": "off",
+    "indent": ["error", 2],
     "import/extensions": [
       "error",
       "ignorePackages",

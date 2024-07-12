@@ -1,0 +1,10 @@
+POST https://api.notion.com/v1/oauth/token
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic MzRjYTU4MTItNmJlMS00ZTVmLTljNDMtODY1MTIxMGRiZjQyOnNlY3JldF95Q0ZSZTVNelJsc3BDMzY0ZTZma0ROUk9zNm9Jdnlja25qenV2dzFjcXZz
+
+{
+    "grant_type": "authorization_code",
+    "code": "0306bd03-1a9a-4839-a62d-64cfb6785d38",
+    "redirect_uri": "http://localhost:8080"
+}
