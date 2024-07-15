@@ -130,7 +130,7 @@ const appHomeOpenedCallback = async ({ client, event }: AllMiddlewareArgs & Slac
                   type: 'plain_text',
                   text: 'Connect Notion',
                 },
-                url: `https://www.notion.so/install-integration?response_type=code&client_id=34ca5812-6be1-4e5f-9c43-8651210dbf42&redirect_uri=http%3A%2F%2Flocalhost%3A8080&owner=user&state=${event.user}`,
+                url: `https://www.notion.so/install-integration?response_type=code&client_id=34ca5812-6be1-4e5f-9c43-8651210dbf42&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fnotion%2Fcallback&owner=user&state=${event.user}`,
                 action_id: 'notion_auth_button',
                 style: 'primary',
               },
