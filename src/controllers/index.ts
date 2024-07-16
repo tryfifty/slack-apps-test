@@ -1,5 +1,6 @@
 import { App } from '@slack/bolt';
 import { Express, Request, Response } from 'express';
+
 import { supabaseClient } from '../services';
 
 const getTeams = async (slackApp) => {
