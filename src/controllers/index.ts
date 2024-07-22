@@ -11,7 +11,10 @@ const getTeams = async (slackApp) => {
 
   // get supabase team table with teamId
 
-  const { data: slackConnections, error: slackConnectionsError } = await supabaseClient.from('SlackConnections').select().eq('slack_team_id', slackTeam.team_id);
+  const { data: slackConnections, error: slackConnectionsError } = await supabaseClient
+    .from('SlackConnections')
+    .select()
+    .eq('slack_team_id', slackTeam.team_id);
 
   // if not exist, create new team
   if (slackConnectionsError) {
@@ -19,11 +22,15 @@ const getTeams = async (slackApp) => {
   }
 
   if (slackConnections.length === 0) {
-    const { data: newTeam, error: newTeamError } = await supabaseClient.from('Teams').insert([
-      {
-        name: slackTeam.team,
-      },
-    ]).select().single();
+    const { data: newTeam, error: newTeamError } = await supabaseClient
+      .from('Teams')
+      .insert([
+        {
+          name: slackTeam.team,
+        },
+      ])
+      .select()
+      .single();
 
     if (newTeamError) {
       throw new Error(`Error creating team: ${newTeamError.message}`);
@@ -31,16 +38,19 @@ const getTeams = async (slackApp) => {
 
     console.log(newTeam);
 
-    // @ts-ignore
     const teamId = newTeam.id;
 
     // Integration 생성
-    const { data: newIntegration, error: newIntegrationError } = await supabaseClient.from('Integrations').insert([
-      {
-        team_id: teamId,
-        type: 'notion',
-      },
-    ]).select().single();
+    const { data: newIntegration, error: newIntegrationError } = await supabaseClient
+      .from('Integrations')
+      .insert([
+        {
+          team_id: teamId,
+          type: 'notion',
+        },
+      ])
+      .select()
+      .single();
 
     if (newIntegrationError) {
       // 팀 생성 취소 (롤백)
@@ -49,18 +59,21 @@ const getTeams = async (slackApp) => {
     }
 
     // TODO: Should make type for newIntegration
-    // @ts-ignore
     const integrationId = newIntegration.id;
 
     // NotionConnection 생성
-    const { data: newSlackConnection, error: newSlackConnectionError } = await supabaseClient.from('SlackConnections').insert([
-      {
-        integration_id: integrationId,
-        slack_team_id: slackTeam.team_id,
-        slack_team_name: slackTeam.team,
-        team_id: teamId,
-      },
-    ]).select().single();
+    const { data: newSlackConnection, error: newSlackConnectionError } = await supabaseClient
+      .from('SlackConnections')
+      .insert([
+        {
+          integration_id: integrationId,
+          slack_team_id: slackTeam.team_id,
+          slack_team_name: slackTeam.team,
+          team_id: teamId,
+        },
+      ])
+      .select()
+      .single();
 
     if (newSlackConnectionError) {
       // Integration 및 팀 생성 취소 (롤백)
@@ -117,17 +130,21 @@ const controllers = (app: Express, slackApp: App) => {
       const { access_token, workspace_name, workspace_id, workspace_icon, bot_id } = notionData;
 
       // create notion connection
-      const { data: notionConnections, error: notionConnectionsError } = await supabaseClient.from('NotionConnections').insert([
-        {
-          access_token,
-          workspace_name,
-          workspace_id,
-          workspace_icon,
-          bot_id,
-          integration_id,
-          team_id,
-        },
-      ]).select().single();
+      const { data: notionConnections, error: notionConnectionsError } = await supabaseClient
+        .from('NotionConnections')
+        .insert([
+          {
+            access_token,
+            workspace_name,
+            workspace_id,
+            workspace_icon,
+            bot_id,
+            integration_id,
+            team_id,
+          },
+        ])
+        .select()
+        .single();
 
       if (notionConnectionsError) {
         throw new Error(`Error creating notion connection: ${notionConnectionsError.message}`);
