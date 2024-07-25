@@ -1,15 +1,14 @@
 import { App } from '@slack/bolt';
 import { Express, Request, Response } from 'express';
 
+import { Client } from '@notionhq/client';
+import { NotionAPILoader } from '@langchain/community/document_loaders/web/notionapi';
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+
 import { supabaseClient } from '../services';
 
 const getTeams = async (slackApp) => {
   const slackTeam = await slackApp.client.auth.test();
-
-  // const slackTeamName = slackTeam.team;
-  // const slackTeamId = slackTeam.team_id;
-
-  // get supabase team table with teamId
 
   const { data: slackConnections, error: slackConnectionsError } = await supabaseClient
     .from('SlackConnections')
@@ -82,12 +81,58 @@ const getTeams = async (slackApp) => {
       throw new Error(`Error creating notion connection: ${newSlackConnectionError.message}`);
     }
 
-    console.log('Team and integration created successfully:', newTeam, newIntegration, newSlackConnection);
+    console.log(
+      'Team and integration created successfully:',
+      newTeam,
+      newIntegration,
+      newSlackConnection,
+    );
 
     return newSlackConnection;
   }
   console.log('Team already exists:', slackConnections);
   return slackConnections[0];
+};
+
+const syncNotion = async (access_token) => {
+  // Initializing a client
+  try {
+    const notion = new Client({
+      auth: access_token,
+    });
+
+    const { results } = await notion.search({});
+
+    console.log(results);
+
+    for (let i = 0; i < results.length; i += 1) {
+      const pageId = results[i].id;
+
+      const loader = new NotionAPILoader({
+        clientOptions: {
+          auth: access_token,
+        },
+        id: pageId,
+        type: 'page',
+      });
+
+      const separators = RecursiveCharacterTextSplitter.getSeparatorsForLanguage('markdown');
+      // console.log({ separators });
+
+      const splitter = new RecursiveCharacterTextSplitter({
+        separators,
+        chunkSize: 1000,
+        chunkOverlap: 100,
+      });
+
+      const data = await loader.load();
+      const pageDocs = await splitter.splitDocuments(data);
+
+      // console.log({ pageDocs });
+    }
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 const controllers = (app: Express, slackApp: App) => {
@@ -151,10 +196,42 @@ const controllers = (app: Express, slackApp: App) => {
       } else {
         console.log(notionConnections);
 
-        slackApp.client.chat.postMessage({
+        const result = await slackApp.client.chat.postMessage({
           channel: state as string,
-          text: 'Notion 연동이 완료되었습니다.',
+          blocks: [
+            {
+              type: 'divider',
+            },
+            {
+              type: 'section',
+              text: {
+                type: 'mrkdwn',
+                text: `Hi <@${state}>, it's Macdal :wave:\nConnect your Notion workspace and chat with me!`,
+              },
+            },
+            {
+              type: 'actions',
+              elements: [
+                {
+                  type: 'button',
+                  text: {
+                    type: 'plain_text',
+                    text: ':spinner:  Connecting Notion',
+                  },
+                  value: 'button_2',
+                  action_id: 'button_2_click',
+                },
+              ],
+            },
+            {
+              type: 'divider',
+            },
+          ],
         });
+
+        console.log(result);
+        // redirect to /update/notion with channel id and access token with post method
+        // res.redirect(`/update/notion?team_id=${team_id}&channel=${result.ts}`);
       }
     } catch (error) {
       console.error(error);
@@ -163,6 +240,19 @@ const controllers = (app: Express, slackApp: App) => {
 
     // slackApp.client.chat.postMessage({
     //     channel:
+  });
+
+  app.get('/update/notion', async (req: Request, res: Response) => {
+    // const { access_token } = req.query;
+
+    try {
+      const token = 'secret_XbkP6gpBPR6PARAKS3OZWxhrkWBZhEEVdmE6DYDsfkr';
+      syncNotion(token);
+    } catch (error) {
+      console.error(error);
+    }
+
+    res.send('Hello World!');
   });
 };
 
