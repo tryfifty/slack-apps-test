@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@langchain/community": "^0.2.17",
-    "@langchain/core": "^0.2.15",
+    "@langchain/core": "^0.2.18",
     "@langchain/openai": "^0.2.1",
     "@slack/bolt": "^3.19.0",
     "@supabase/supabase-js": "^2.44.3",
