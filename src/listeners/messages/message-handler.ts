@@ -8,12 +8,24 @@ import { StringOutputParser } from '@langchain/core/output_parsers';
 
 import path from 'path';
 import { formatDocumentsAsString } from 'langchain/util/document';
+import { QdrantVectorStore } from '@langchain/qdrant';
+import slackify from 'slackify-markdown';
 import { SlackChatHistoryRetriever } from '../../retrievers/slackChatHistoryRetriever';
+import messageConversation from '../../blocks/messageConversation';
 
 const messageHandler = async ({ context, message, event, say, client }) => {
   // console.log('Message received', event);
-  if (message.channel_type === 'im' && message.subtype !== 'bot_message') {
-    console.log('Message is from App Home', event);
+  /**
+   * TODO:: Bug Fix
+   * Currently, the bot's second message type is message_changed so there's error commig out.
+   */
+  if (
+    message.channel_type === 'im'
+    && event.subtype !== 'bot_message'
+    && !message.message?.bot_id
+  ) {
+    // console.log('Message is from App Home', event);
+    console.log('Message is from App Home', message);
 
     try {
       const msgFromEvent = event.text;
@@ -28,19 +40,28 @@ const messageHandler = async ({ context, message, event, say, client }) => {
           thread_ts: message.ts,
         });
 
-        // TODO:: Load the vector store from the local (Test purpose only)
-        const directory = path.resolve(process.cwd(), 'src/data/faiss_index');
+        // Load vector store from local(test purpose)
+        // const directory = path.resolve(process.cwd(), 'src/data/faiss_index');
 
-        // Load the vector store from the directory
-        const loadedVectorStore = await FaissStore.loadFromPython(
-          directory,
-          new OpenAIEmbeddings(),
-        );
+        // // Load the vector store from the directory
+        // const loadedVectorStore = await FaissStore.loadFromPython(
+        //   directory,
+        //   new OpenAIEmbeddings(),
+        // );
+
+        /**
+         * This way is also sucks because It's too over simplified.
+         */
+        const vectorStore = await QdrantVectorStore.fromExistingCollection(new OpenAIEmbeddings(), {
+          url: process.env.QDRANT_URL,
+          apiKey: process.env.QDRANT_API_KEY,
+          collectionName: 'notion_test',
+        });
 
         // Search for the most similar document
         // const result = await loadedVectorStore.similaritySearch('login', 2);
 
-        const retriever = loadedVectorStore.asRetriever();
+        const ContextRetriever = vectorStore.asRetriever();
         const prompt = await pull<ChatPromptTemplate>('rag-macdal-starter');
 
         console.log('prompt', prompt);
@@ -54,7 +75,8 @@ const messageHandler = async ({ context, message, event, say, client }) => {
 
         const chatHistoryRetriever = new SlackChatHistoryRetriever({
           slackApp: client,
-          event,
+          channel: event.channel,
+          ts: event.ts || event.thread_ts,
         }).pipe(formatDocumentsAsString);
 
         /**
@@ -68,15 +90,18 @@ const messageHandler = async ({ context, message, event, say, client }) => {
 
         const result = await ragChain.invoke({
           chat_history: await chatHistoryRetriever.invoke(cleanedText),
-          context: await retriever.invoke(cleanedText),
+          context: await ContextRetriever.invoke(cleanedText),
           question: cleanedText,
         });
+
+        const slackifiedResult = slackify(result);
 
         // Update the initial message with the result
         await client.chat.update({
           channel: event.channel,
           ts: typingMessage.ts,
-          text: result,
+          // text: result,
+          blocks: messageConversation(slackifiedResult),
         });
       }
     } catch (error) {

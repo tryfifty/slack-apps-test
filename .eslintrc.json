@@ -25,6 +25,7 @@
     "no-console": "off",
     "no-useless-constructor": "off",
     "no-await-in-loop": "off",
+    "no-restricted-syntax": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "indent": ["error", 2],
     "import/extensions": [

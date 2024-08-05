@@ -18,21 +18,6 @@ const appMetionedCallback = async ({ event, client }) => {
     // console.log('msgFromEvent', cleanedText);
 
     if (cleanedText.length !== 0) {
-      // const slackConversations = await client.conversations.replies({
-      //   channel: event.channel,
-      //   ts: event.thread_ts || event.ts, // 스레드의 부모 메시지 타임스탬프
-      //   limit: 10, // 최근 10개의 메시지만 가져오기
-      // });
-
-      // const chatHistory = slackConversations.messages
-      //   .map((message) => {
-      //     if (message.bot_id && message.bot_id === 'B07B1LA8VU7') {
-      //       return `AI(You) : ${message.text}`;
-      //     }
-      //     return `User #(${message.user}) : ${message.text}`;
-      //   })
-      //   .join('\n');
-
       // Initial message indicating bot is typing
       const typingMessage = await client.chat.postMessage({
         channel: event.channel,
@@ -44,10 +29,7 @@ const appMetionedCallback = async ({ event, client }) => {
       const directory = path.resolve(process.cwd(), 'src/data/faiss_index');
 
       // Load the vector store from the directory
-      const loadedVectorStore = await FaissStore.loadFromPython(
-        directory,
-        new OpenAIEmbeddings(),
-      );
+      const loadedVectorStore = await FaissStore.loadFromPython(directory, new OpenAIEmbeddings());
 
       // Search for the most similar document
       // const result = await loadedVectorStore.similaritySearch('login', 2);
@@ -66,7 +48,8 @@ const appMetionedCallback = async ({ event, client }) => {
 
       const chatHistoryRetriever = new SlackChatHistoryRetriever({
         slackApp: client,
-        event,
+        channel: event.channel,
+        ts: event.ts || event.thread_ts,
       }).pipe(formatDocumentsAsString);
 
       /**
