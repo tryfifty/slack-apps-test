@@ -1,6 +1,10 @@
 import { AllMiddlewareArgs, SlackEventMiddlewareArgs } from '@slack/bolt';
 import appHomeInitialBlocks from '../../blocks/appHome';
-import supabase from '../../services/supabase';
+import supabase, {
+  getNotionConnection,
+  getNotionIntegrationInfo,
+  getSlackConnection,
+} from '../../services/supabase';
 
 const appHomeOpenedCallback = async ({
   client,
@@ -10,55 +14,44 @@ const appHomeOpenedCallback = async ({
   if (event.tab !== 'home') return;
 
   try {
-    // await client.views.publish({
-    //   user_id: event.user,
-    //   view: {
-    //     type: 'home',
-    //     blocks: appHomeInitialBlocks(event),
-    //   },
-    // });
-
     /**
      * TODO:: Bring Notion and Figma connection information and
      * if it is exist, then show the information.
      */
     const slackTeam = await client.auth.test();
 
-    const slackConnection = await supabase
-      .from('SlackConnections')
-      .select()
-      .eq('slack_team_id', slackTeam.team_id);
+    const slackConnection: any = await getSlackConnection(slackTeam.team_id);
 
-    if (slackConnection.error) {
-      console.error(slackConnection.error);
-      return;
-    }
+    console.log('slackConnection', slackConnection);
 
-    const data = slackConnection.data[0];
+    const notionConnection = await getNotionConnection(slackConnection[0].team_id);
 
-    console.log('data', data);
+    console.log('notionData', notionConnection);
 
-    const notionConnection = await supabase
-      .from('NotionConnections')
-      .select()
-      .eq('team_id', data.team_id);
+    const notionPages = notionConnection
+      ? await getNotionIntegrationInfo(notionConnection.team_id)
+      : [];
 
-    if (notionConnection.error) {
-      console.error(notionConnection.error);
-      return;
-    }
+    console.log('notionPages', notionPages);
 
-    const notionData = notionConnection.data[0];
+    const state = encodeURIComponent(
+      JSON.stringify({
+        userId: event.user,
+        slackTeamId: slackConnection[0].slack_team_id,
+        teamId: slackConnection[0].team_id,
+      }),
+    );
 
-    console.log('notionData', notionData);
+    console.log(state);
 
     await client.views.publish({
       user_id: event.user,
       view: {
         type: 'home',
         blocks: appHomeInitialBlocks({
-          user: event.user,
-          notionConnectionStatus: !!notionData,
+          state,
+          notionConnectionStatus: !!notionConnection,
+          notionPages: notionPages.map((page) => page.title),
         }),
       },
     });

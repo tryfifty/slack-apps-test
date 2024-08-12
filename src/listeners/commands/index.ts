@@ -7,7 +7,7 @@ import messageHelp from '../../blocks/messageHelp';
 import messageConversation from '../../blocks/messageConversation';
 import whipser from './whisper';
 import updateCallback from './update';
-import msgConnection, { Status } from '../../blocks/messageConnect';
+import msgConnection from '../../blocks/messageConnect';
 
 dotenv.config();
 
@@ -51,9 +51,7 @@ const register = (app: App) => {
         console.log(client);
 
         await respond({
-          blocks: msgConnection(Status.CONNECTING, {
-            pages: '* 목표**: 플랫폼의 80% 완성',
-          }),
+          blocks: msgConnection(),
         });
       } catch (error) {
         console.error(error);

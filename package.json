@@ -4,9 +4,10 @@
   "description": "AI powered slack plugin for software devleopment",
   "main": "app.js",
   "scripts": {
-    "start": "tsc && node ./dist/app.js",
+    "start": "tsc && node -r dotenv/config ./dist/app.js",
     "build": "tsc",
-    "dev": "nodemon --watch src --ext ts --exec 'tsc && node ./dist/app.js'",
+    "dev": "nodemon --watch src --ext ts --exec 'tsc && node -r dotenv/config ./dist/app.js'",
+    "ngrok": "ngrok http --domain=meerkat-valid-skylark.ngrok-free.app 3000",
     "lint": "eslint . --ext .ts"
   },
   "author": "Tryfifty Inc",
@@ -46,6 +47,7 @@
     "langchain": "^0.2.8",
     "langsmith": "^0.1.37",
     "notion-to-md": "^3.1.1",
+    "openai": "^4.54.0",
     "pickleparser": "^0.2.1",
     "slackify-markdown": "^4.4.0",
     "uuid": "^10.0.0"

@@ -3,13 +3,13 @@ import { Document } from '@langchain/core/documents';
 // import type { CallbackManagerForRetrieverRun } from '@langchain/core/callbacks/manager';
 // import { App } from '@slack/bolt';
 
-export interface CustomRetrieverInput extends BaseRetrieverInput {
+export interface CustomRetrieverInput {
   slackApp: any;
   channel: string;
   ts: any;
 }
 
-export class SlackChatHistoryRetriever extends BaseRetriever {
+export class SlackChatHistoryRetriever {
   lc_namespace = ['langchain', 'retrievers'];
 
   slackApp: any;
@@ -19,7 +19,6 @@ export class SlackChatHistoryRetriever extends BaseRetriever {
   ts: any;
 
   constructor(fields?: CustomRetrieverInput) {
-    super(fields);
     this.slackApp = fields?.slackApp;
     this.channel = fields?.channel;
     this.ts = fields?.ts;

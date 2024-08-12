@@ -16,7 +16,7 @@ const whipser = async ({ ack, respond, command, payload, client }) => {
 
     const answer = await generateAnswer({
       message: payload.text,
-      from: 'whipser',
+      team: 'whipser',
       channel: payload.channel_id,
       ts: null,
       client,

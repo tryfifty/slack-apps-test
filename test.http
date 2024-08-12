@@ -11,3 +11,7 @@ Authorization: Basic MzRjYTU4MTItNmJlMS00ZTVmLTljNDMtODY1MTIxMGRiZjQyOnNlY3JldF9
 
 ###
 GET http://localhost:8080/update/notion
+
+
+###
+GET http://localhost:8080/testEmbedding

@@ -14,7 +14,8 @@ import {
   insertNotionIntegrationInfo,
 } from '../../services/supabase';
 import split from '../../splitters/notionDataSplitter';
-import msgUpdating, { Status } from '../../blocks/messageUpdate';
+import msgUpdateStart from '../../blocks/messageUpdateStart';
+import msgUpdateComplete from '../../blocks/messageUpdateComplete';
 
 const updateCallback = async ({
   ack,
@@ -37,7 +38,7 @@ const updateCallback = async ({
     const msg = await client.chat.postMessage({
       channel: user_id,
       text: 'Updating Notion workspace connection...',
-      blocks: msgUpdating(Status.CONNECTING, { state: user_id }),
+      blocks: msgUpdateStart(),
     });
 
     /**
@@ -118,7 +119,7 @@ const updateCallback = async ({
       channel: msg.channel as string,
       ts: msg.ts as string,
       text: 'Notion workspace connection made successfully!',
-      blocks: msgUpdating(Status.CONNECTED, {
+      blocks: msgUpdateComplete({
         state: msg.channel as string,
         pages: newNotionDatas.map((page) => page.title).join(', '),
       }),

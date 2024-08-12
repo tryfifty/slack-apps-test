@@ -7,38 +7,50 @@ import { pull } from 'langchain/hub';
 import { formatDocumentsAsString } from 'langchain/util/document';
 import slackify from 'slackify-markdown';
 import { SlackChatHistoryRetriever } from '../retrievers/slackChatHistoryRetriever';
+import { getSlackConnection } from './supabase';
 
-const generateAnswer = async ({ message, from, channel, ts, client }) => {
+import openaiClient from './openai';
+
+const generateAnswer = async ({ message, team, channel, ts, client }) => {
   try {
     /**
      * TODO:: It shouldn't remove the user id from the message if it's not a bot message.
      */
-    const cleanedText = message.replace(/<@[\w\d]+>\s*/, '');
+    let cleanedText;
+
+    // 정규 표현식을 사용하여 메시지에서 모든 사용자 ID를 찾습니다.
+    const userIds = message.match(/<@(\w+)>/g);
 
     /**
-     * TODO:: Should be Improved.
-     * This way is also sucks because It's too over simplified.
+     * TODO: 여기서 사용자 ID를 단순히 이름으로 대체하는 것은 너무 단순한 방법이다.
+     * 나중에는 유저 목록을 관리해해야 할 것 이다
      */
-    const vectorStore = await QdrantVectorStore.fromExistingCollection(new OpenAIEmbeddings(), {
-      url: process.env.QDRANT_URL,
-      apiKey: process.env.QDRANT_API_KEY,
-      collectionName: 'notion_test',
-    });
+    if (userIds) {
+      for (const userId of userIds) {
+        const user = await client.users.info({ user: userId.replace(/<@|>/g, '') });
+        const userName = user.user.real_name || user.user.name;
 
-    // Search for the most similar document
-    // const result = await loadedVectorStore.similaritySearch('login', 2);
+        // 사용자 ID를 이름으로 대체합니다.
+        cleanedText = message.replace(userId, `@${userName}`);
+      }
+    } else {
+      cleanedText = message;
+    }
 
-    const ContextRetriever = vectorStore.asRetriever();
+    console.log('msgFromEvent', cleanedText);
+
+    const slackConnection = await getSlackConnection(team as string);
+    console.log('slackConnection', slackConnection);
+    const { team_id } = slackConnection[0];
+
     const prompt = await pull<ChatPromptTemplate>('rag-macdal-starter');
-
     console.log('prompt', prompt);
 
-    const llm = new ChatOpenAI({ model: 'gpt-4o', temperature: 0 });
-    const ragChain = await createStuffDocumentsChain({
-      llm,
-      prompt,
-      outputParser: new StringOutputParser(),
-    });
+    // const ragChain = await createStuffDocumentsChain({
+    //   llm,
+    //   prompt,
+    //   outputParser: new StringOutputParser(),
+    // });
 
     const chatHistoryRetriever = new SlackChatHistoryRetriever({
       slackApp: client,
@@ -46,27 +58,30 @@ const generateAnswer = async ({ message, from, channel, ts, client }) => {
       ts,
     }).pipe(formatDocumentsAsString);
 
-    /**
-     * Get slack message history
-     *
-     * TODO:: Remember that slack history message limit is tier 3
-     * ( 50 messages per minute per channle? per user? per account? per bot?)
-     */
+    const slackConverationHistory = await chatHistoryRetriever.invoke(cleanedText);
 
-    // console.log('Thread messages:', slackConversations.messages);
+    console.log('slackConverationHistory', slackConverationHistory);
 
-    const result = await ragChain.invoke({
-      chat_history: await chatHistoryRetriever.invoke(cleanedText),
-      context: await ContextRetriever.invoke(cleanedText),
-      question: cleanedText,
-    });
+    // /**
+    //  * Get slack message history
+    //  *
+    //  * TODO:: Remember that slack history message limit is tier 3
+    //  * ( 50 messages per minute per channle? per user? per account? per bot?)
+    //  */
 
-    const slackifiedResult = slackify(result);
+    // // console.log('Thread messages:', slackConversations.messages);
 
-    return slackifiedResult;
+    // const result = await ragChain.invoke({
+    //   chat_history: await chatHistoryRetriever.invoke(cleanedText),
+    //   context: await ContextRetriever.invoke(cleanedText),
+    //   question: cleanedText,
+    // });
+
+    // const slackifiedResult = slackify(result);
+
+    // return slackifiedResult;
   } catch (error) {
     console.error(error);
-
     return 'Error occurred while generating the answer';
   }
 };
