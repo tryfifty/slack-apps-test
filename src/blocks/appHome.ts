@@ -75,21 +75,21 @@ const appHomeInitialBlocks = ({
     },
     ...(notionConnectionStatus && notionPages.length > 0
       ? [
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: '*Connected Notion Pages*:',
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: '*Connected Notion Pages*:',
+            },
           },
-        },
-        {
-          type: 'context',
-          elements: notionPages.map((page) => ({
-            type: 'mrkdwn',
-            text: `${page}`,
-          })),
-        },
-      ]
+          {
+            type: 'context',
+            elements: notionPages.map((page) => ({
+              type: 'mrkdwn',
+              text: `${page}`,
+            })),
+          },
+        ]
       : []),
     {
       type: 'section',
@@ -114,21 +114,21 @@ const appHomeInitialBlocks = ({
     },
     ...(figmaConnectionStatus && figmaPages.length > 0
       ? [
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: '*Connected Figma Pages*:',
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: '*Connected Figma Pages*:',
+            },
           },
-        },
-        {
-          type: 'section',
-          fields: figmaPages.map((page) => ({
-            type: 'mrkdwn',
-            text: `:art: ${page}`,
-          })),
-        },
-      ]
+          {
+            type: 'section',
+            fields: figmaPages.map((page) => ({
+              type: 'mrkdwn',
+              text: `:art: ${page}`,
+            })),
+          },
+        ]
       : []),
     {
       type: 'divider',
@@ -180,11 +180,11 @@ const appHomeInitialBlocks = ({
       text: {
         type: 'mrkdwn',
         text:
-          '`"Where is the user registration policy document?"`'
-          + '\n'
-          + '`"Show me the latest design for the homepage"`'
-          + '\n'
-          + '`"What is the status of the new feature implementation?"`',
+          '`"Where is the user registration policy document?"`' +
+          '\n' +
+          '`"Show me the latest design for the homepage"`' +
+          '\n' +
+          '`"What is the status of the new feature implementation?"`',
       },
     },
     {
@@ -199,11 +199,11 @@ const appHomeInitialBlocks = ({
       text: {
         type: 'mrkdwn',
         text:
-          '`"Who is the product owner for the registration module?"`'
-          + '\n'
-          + '`"Can you provide me with the team’s current workload distribution?"`'
-          + '\n'
-          + '`"Who is responsible for the UX design of our new app?"`',
+          '`"Who is the product owner for the registration module?"`' +
+          '\n' +
+          '`"Can you provide me with the team’s current workload distribution?"`' +
+          '\n' +
+          '`"Who is responsible for the UX design of our new app?"`',
       },
     },
     {
@@ -218,11 +218,11 @@ const appHomeInitialBlocks = ({
       text: {
         type: 'mrkdwn',
         text:
-          '`"When is the next release scheduled?"`'
-          + '\n'
-          + '`"Can you show me the project timeline for Q3?"`'
-          + '\n'
-          + '`"What are the upcoming milestones for the team?"`',
+          '`"When is the next release scheduled?"`' +
+          '\n' +
+          '`"Can you show me the project timeline for Q3?"`' +
+          '\n' +
+          '`"What are the upcoming milestones for the team?"`',
       },
     },
     {
