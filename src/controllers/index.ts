@@ -2,93 +2,31 @@ import { App } from '@slack/bolt';
 import { Express, Request, Response } from 'express';
 
 import { supabaseClient } from '../services';
-
-const getTeams = async (slackApp) => {
-  const slackTeam = await slackApp.client.auth.test();
-
-  // const slackTeamName = slackTeam.team;
-  // const slackTeamId = slackTeam.team_id;
-
-  // get supabase team table with teamId
-
-  const { data: slackConnections, error: slackConnectionsError } = await supabaseClient
-    .from('SlackConnections')
-    .select()
-    .eq('slack_team_id', slackTeam.team_id);
-
-  // if not exist, create new team
-  if (slackConnectionsError) {
-    throw new Error(`Error getting teams: ${slackConnectionsError.message}`);
-  }
-
-  if (slackConnections.length === 0) {
-    const { data: newTeam, error: newTeamError } = await supabaseClient
-      .from('Teams')
-      .insert([
-        {
-          name: slackTeam.team,
-        },
-      ])
-      .select()
-      .single();
-
-    if (newTeamError) {
-      throw new Error(`Error creating team: ${newTeamError.message}`);
-    }
-
-    console.log(newTeam);
-
-    const teamId = newTeam.id;
-
-    // Integration 생성
-    const { data: newIntegration, error: newIntegrationError } = await supabaseClient
-      .from('Integrations')
-      .insert([
-        {
-          team_id: teamId,
-          type: 'notion',
-        },
-      ])
-      .select()
-      .single();
-
-    if (newIntegrationError) {
-      // 팀 생성 취소 (롤백)
-      await supabaseClient.from('teams').delete().eq('id', teamId);
-      throw new Error(`Error creating integration: ${newIntegrationError.message}`);
-    }
-
-    // TODO: Should make type for newIntegration
-    const integrationId = newIntegration.id;
-
-    // NotionConnection 생성
-    const { data: newSlackConnection, error: newSlackConnectionError } = await supabaseClient
-      .from('SlackConnections')
-      .insert([
-        {
-          integration_id: integrationId,
-          slack_team_id: slackTeam.team_id,
-          slack_team_name: slackTeam.team,
-          team_id: teamId,
-        },
-      ])
-      .select()
-      .single();
-
-    if (newSlackConnectionError) {
-      // Integration 및 팀 생성 취소 (롤백)
-      await supabaseClient.from('integrations').delete().eq('id', integrationId);
-      await supabaseClient.from('teams').delete().eq('id', teamId);
-      throw new Error(`Error creating notion connection: ${newSlackConnectionError.message}`);
-    }
-
-    console.log('Team and integration created successfully:', newTeam, newIntegration, newSlackConnection);
-
-    return newSlackConnection;
-  }
-  console.log('Team already exists:', slackConnections);
-  return slackConnections[0];
-};
+import msgConnection from '../blocks/messageConnect';
+import appHomeInitialBlocks from '../blocks/appHome';
+import messageHelp from '../blocks/messageHelp';
+import {
+  deleteNotionIntegrationInfo,
+  getNotionConnection,
+  getSlackConnection,
+  getSlackConnectionById,
+  getTeamBySlackId,
+  insertNotionIntegrationInfo,
+  upsertNotionConnection,
+} from '../services/supabase';
+import { getAccessToken, getNotionPages } from '../services/notion';
+import notionDataLoader from '../loaders/notionDataLoader';
+import split from '../splitters/notionDataSplitter';
+import embedding from '../embedders';
+import {
+  createCollection,
+  deleteCollection,
+  insertVectorData,
+  isCollectionExist,
+} from '../services/qdrant';
+import msgUpdateStart from '../blocks/messageUpdateStart';
+import msgUpdateComplete from '../blocks/messageUpdateComplete';
+// import { QdrantVectorStore } from '@langchain/qdrant';
 
 const controllers = (app: Express, slackApp: App) => {
   app.get('/notion/callback', async (req: Request, res: Response) => {
@@ -96,73 +34,213 @@ const controllers = (app: Express, slackApp: App) => {
 
     const { code, state } = req.query; // state에 user_id가 저장되어 있음
 
-    const clientId = process.env.NOTION_OAUTH_CLIENT_ID;
-    const clientSecret = process.env.NOTION_OAUTH_CLIENT_SECRET;
-    const redirectUri = process.env.NOTION_OAUTH_REDIRECT_URI;
+    // TODO:: Input Validation
+    if (!true) {
+      console.error('Invalid Input');
+    }
 
-    // encode in base 64
-    // Notion OAuth token 교환
+    const { userId, teamId, slackTeamId } = JSON.parse(decodeURIComponent(state as string));
+
+    console.log(userId, teamId, slackTeamId);
+
     try {
-      const { team_id, integration_id } = await getTeams(slackApp);
+      const coneciton = await getSlackConnection(slackTeamId);
 
-      // create Notion Connections
+      if (coneciton.length === 0) {
+        console.error('No Slack Connection');
+        return;
+      }
 
-      const encoded = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+      const { token } = coneciton[0].installation.bot;
 
-      console.log(code, encoded);
-      const response = await fetch('https://api.notion.com/v1/oauth/token', {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Basic ${encoded}`,
-        },
-        body: JSON.stringify({
-          grant_type: 'authorization_code',
-          code,
-          redirect_uri: redirectUri,
-        }),
-      });
+      const notionData = await getAccessToken(code);
 
-      const notionData = await response.json();
       console.log(notionData);
 
-      const { access_token, workspace_name, workspace_id, workspace_icon, bot_id } = notionData;
+      const notionConnection = await upsertNotionConnection({
+        notionData,
+        team_id: teamId,
+      });
 
-      // create notion connection
-      const { data: notionConnections, error: notionConnectionsError } = await supabaseClient
-        .from('NotionConnections')
-        .insert([
-          {
-            access_token,
-            workspace_name,
-            workspace_id,
-            workspace_icon,
-            bot_id,
-            integration_id,
-            team_id,
-          },
-        ])
-        .select()
-        .single();
+      console.log(notionConnection);
 
-      if (notionConnectionsError) {
-        throw new Error(`Error creating notion connection: ${notionConnectionsError.message}`);
-      } else {
-        console.log(notionConnections);
+      await slackApp.client.chat.postMessage({
+        token,
+        channel: userId as string,
+        blocks: msgConnection(),
+      });
 
-        slackApp.client.chat.postMessage({
-          channel: state as string,
-          text: 'Notion 연동이 완료되었습니다.',
-        });
-      }
+      // redirect to /update/notion with channel id and access token with post method
+      res.redirect(`/update/notion?team_id=${teamId}&user=${userId}&connection=${coneciton[0].id}`);
     } catch (error) {
       console.error(error);
     }
-    res.send('Hello World!');
+  });
 
-    // slackApp.client.chat.postMessage({
-    //     channel:
+  app.get('/update/notion', async (req: Request, res: Response) => {
+    const { team_id, user, connection } = req.query;
+
+    // TODO: Input Validation
+    if (!true) {
+      console.error('Invalid Input');
+    }
+
+    const htmlResponse = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Notion Integration Complete</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f4f4f4;
+                text-align: center;
+                padding: 50px;
+            }
+            h1 {
+                color: #333;
+            }
+            .button {
+                display: inline-block;
+                margin-top: 20px;
+                padding: 10px 20px;
+                font-size: 16px;
+                color: #fff;
+                background-color: #4CAF50;
+                border: none;
+                border-radius: 5px;
+                text-decoration: none;
+            }
+            .button:hover {
+                background-color: #45a049;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Notion Integration Completed!</h1>
+        <a href="https://slack.com" class="button">Return to Slack</a>
+    </body>
+    </html>
+`;
+
+    res.send(htmlResponse);
+
+    try {
+      const slackConnection = await getSlackConnectionById(connection as string);
+
+      const chat = await slackApp.client.chat.postMessage({
+        token: slackConnection[0].installation.bot.token,
+        channel: user as string,
+        blocks: msgUpdateStart(),
+      });
+
+      /**
+       * TODO: Should improve updating logic. (ig, versioning maybe?)
+       */
+      if (isCollectionExist(team_id as string)) {
+        console.log('Collection Delete');
+        await deleteCollection(team_id as string);
+      }
+
+      await createCollection(team_id as string);
+
+      const notionConnection = await getNotionConnection(team_id as string);
+
+      const { access_token } = notionConnection;
+      const { results } = await getNotionPages(access_token);
+
+      for (const page of results) {
+        const pageId = page.id;
+
+        // console.log(page);
+
+        const notionData = await notionDataLoader(access_token, pageId);
+
+        // console.log(notionData);
+
+        const pageDocs = await split(notionData);
+        const texts = pageDocs.map((doc) => doc.pageContent);
+        const vectors = await embedding(texts);
+
+        const vectorData = [];
+
+        for (let j = 0; j < pageDocs.length; j += 1) {
+          const doc = pageDocs[j];
+          const vector = vectors[j];
+
+          vectorData.push({
+            vector,
+            payload: {
+              content: doc.pageContent,
+              metadata: doc.metadata,
+            },
+          });
+
+          await insertVectorData(team_id as string, vectorData);
+        }
+      }
+
+      /**
+       * TODO: Should be improved
+       */
+
+      await deleteNotionIntegrationInfo(team_id as string);
+
+      const newNotionDatas = results.map((page) => ({
+        type: page.object,
+        notion_id: page.id,
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        title: page.properties.title.title[0].plain_text,
+        team_id,
+        connection_id: notionConnection.id,
+      }));
+
+      await insertNotionIntegrationInfo(newNotionDatas);
+
+      await slackApp.client.chat.update({
+        token: slackConnection[0].installation.bot.token,
+        channel: chat.channel,
+        ts: chat.ts,
+        text: 'Notion workspace connection made successfully!',
+        blocks: msgUpdateComplete({
+          state: user as string,
+          pages: newNotionDatas.map((page) => page.title).join(', '),
+        }),
+      });
+
+      // if (first) {
+      //   console.log(user);
+
+      //   await slackApp.client.views.publish({
+      //     user_id: user as string,
+      //     view: {
+      //       type: 'home',
+      //       blocks: appHomeInitialBlocks({
+      //         user: channel as string,
+      //         notionConnectionStatus: true,
+      //       }),
+      //     },
+      //   });
+
+      //   await slackApp.client.chat.postMessage({
+      //     channel: channel as string,
+      //     text: `Hello, <@${user}>, Ready to ask?`,
+      //     blocks: messageHelp(user as string),
+      //   });
+      // }
+    } catch (error) {
+      console.error(error);
+    }
+  });
+
+  app.get('/testEmbedding', async (req: Request, res: Response) => {
+    const texts = ['Hello, World!', 'This is a test message.'];
+    const result = await embedding(texts);
+
+    res.send(result);
   });
 };
 

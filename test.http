@@ -8,3 +8,10 @@ Authorization: Basic MzRjYTU4MTItNmJlMS00ZTVmLTljNDMtODY1MTIxMGRiZjQyOnNlY3JldF9
     "code": "0306bd03-1a9a-4839-a62d-64cfb6785d38",
     "redirect_uri": "http://localhost:8080"
 }
+
+###
+GET http://localhost:8080/update/notion
+
+
+###
+GET http://localhost:8080/testEmbedding
