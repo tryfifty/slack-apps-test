@@ -1,5 +1,5 @@
 // TODO: Add more embedders here
-import embedder from './openAI';
+import { embeddings as embedder } from '../services/openai';
 
 // const embedding = async (texts) => {
 //   const result = await embedder.embedDocuments(texts);

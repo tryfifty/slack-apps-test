@@ -12,68 +12,68 @@ import { SlackChatHistoryRetriever } from '../../retrievers/slackChatHistoryRetr
 const appMetionedCallback = async ({ event, client }) => {
   console.log('app_mention event payload:', event);
   try {
-    const msgFromEvent = event.text;
-    const cleanedText = msgFromEvent.replace(/<@[\w\d]+>\s*/, '');
+    // const msgFromEvent = event.text;
+    // const cleanedText = msgFromEvent.replace(/<@[\w\d]+>\s*/, '');
 
-    // console.log('msgFromEvent', cleanedText);
+    // // console.log('msgFromEvent', cleanedText);
 
-    if (cleanedText.length !== 0) {
-      // Initial message indicating bot is typing
-      const typingMessage = await client.chat.postMessage({
-        channel: event.channel,
-        text: 'Bot is typing...',
-        thread_ts: event.thread_ts || event.ts,
-      });
+    // if (cleanedText.length !== 0) {
+    //   // Initial message indicating bot is typing
+    //   const typingMessage = await client.chat.postMessage({
+    //     channel: event.channel,
+    //     text: 'Bot is typing...',
+    //     thread_ts: event.thread_ts || event.ts,
+    //   });
 
-      // TODO:: Load the vector store from the local (Test purpose only)
-      const directory = path.resolve(process.cwd(), 'src/data/faiss_index');
+    //   // TODO:: Load the vector store from the local (Test purpose only)
+    //   const directory = path.resolve(process.cwd(), 'src/data/faiss_index');
 
-      // Load the vector store from the directory
-      const loadedVectorStore = await FaissStore.loadFromPython(directory, new OpenAIEmbeddings());
+    //   // Load the vector store from the directory
+    //   const loadedVectorStore = await FaissStore.loadFromPython(directory, new OpenAIEmbeddings());
 
-      // Search for the most similar document
-      // const result = await loadedVectorStore.similaritySearch('login', 2);
+    //   // Search for the most similar document
+    //   // const result = await loadedVectorStore.similaritySearch('login', 2);
 
-      const retriever = loadedVectorStore.asRetriever();
-      const prompt = await pull<ChatPromptTemplate>('rag-macdal-starter');
+    //   const retriever = loadedVectorStore.asRetriever();
+    //   const prompt = await pull<ChatPromptTemplate>('rag-macdal-starter');
 
-      console.log('prompt', prompt);
+    //   console.log('prompt', prompt);
 
-      const llm = new ChatOpenAI({ model: 'gpt-4o', temperature: 0 });
-      const ragChain = await createStuffDocumentsChain({
-        llm,
-        prompt,
-        outputParser: new StringOutputParser(),
-      });
+    //   const llm = new ChatOpenAI({ model: 'gpt-4o', temperature: 0 });
+    //   const ragChain = await createStuffDocumentsChain({
+    //     llm,
+    //     prompt,
+    //     outputParser: new StringOutputParser(),
+    //   });
 
-      const chatHistoryRetriever = new SlackChatHistoryRetriever({
-        slackApp: client,
-        channel: event.channel,
-        ts: event.ts || event.thread_ts,
-      }).pipe(formatDocumentsAsString);
+    //   const chatHistoryRetriever = new SlackChatHistoryRetriever({
+    //     slackApp: client,
+    //     channel: event.channel,
+    //     ts: event.ts || event.thread_ts,
+    //   }).pipe(formatDocumentsAsString);
 
-      /**
-       * Get slack message history
-       *
-       * TODO:: Remember that slack history message limit is tier 3
-       * ( 50 messages per minute per channle? per user? per account? per bot?)
-       */
+    //   /**
+    //    * Get slack message history
+    //    *
+    //    * TODO:: Remember that slack history message limit is tier 3
+    //    * ( 50 messages per minute per channle? per user? per account? per bot?)
+    //    */
 
-      // console.log('Thread messages:', slackConversations.messages);
+    //   // console.log('Thread messages:', slackConversations.messages);
 
-      const result = await ragChain.invoke({
-        chat_history: await chatHistoryRetriever.invoke(cleanedText),
-        context: await retriever.invoke(cleanedText),
-        question: cleanedText,
-      });
+    //   const result = await ragChain.invoke({
+    //     chat_history: await chatHistoryRetriever.invoke(cleanedText),
+    //     context: await retriever.invoke(cleanedText),
+    //     question: cleanedText,
+    //   });
 
-      // Update the initial message with the result
-      await client.chat.update({
-        channel: event.channel,
-        ts: typingMessage.ts,
-        text: result,
-      });
-    }
+    //   // Update the initial message with the result
+    //   await client.chat.update({
+    //     channel: event.channel,
+    //     ts: typingMessage.ts,
+    //     text: result,
+    //   });
+    // }
   } catch (error) {
     console.error(error);
   }

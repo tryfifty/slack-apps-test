@@ -56,11 +56,11 @@ const generateAnswer = async ({ message, team, channel, ts, client }) => {
       slackApp: client,
       channel,
       ts,
-    }).pipe(formatDocumentsAsString);
+    });
 
-    const slackConverationHistory = await chatHistoryRetriever.invoke(cleanedText);
+    const slackConverationHistory = await chatHistoryRetriever.get1on1Conversation(true);
 
-    console.log('slackConverationHistory', slackConverationHistory);
+    // console.log('slackConverationHistory', slackConverationHistory);
 
     // /**
     //  * Get slack message history

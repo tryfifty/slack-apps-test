@@ -35,12 +35,18 @@ const insertVectorData = async (collectionName: string, vectorData) => {
   });
 };
 
-const searchVectorData = async (collectionName: string, vector) => {
+const searchVectorData = async (collectionName: string, vector: number[]) => {
   const results = await qdrant.search(collectionName, {
     vector,
-    limit: 3,
+    limit: 5,
   });
   return results;
 };
 
-export { isCollectionExist, createCollection, insertVectorData, deleteCollection };
+export {
+  isCollectionExist,
+  createCollection,
+  insertVectorData,
+  deleteCollection,
+  searchVectorData,
+};

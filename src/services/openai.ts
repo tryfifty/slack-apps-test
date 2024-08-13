@@ -5,4 +5,7 @@ const openai = new Openai({
   project: process.env.OPENAI_PROJECT_ID,
 });
 
+const { chat, embeddings } = openai;
+
 export default openai;
+export { embeddings, chat };
