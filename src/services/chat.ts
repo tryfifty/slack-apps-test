@@ -9,8 +9,6 @@ import slackify from 'slackify-markdown';
 import { SlackChatHistoryRetriever } from '../retrievers/slackChatHistoryRetriever';
 import { getSlackConnection } from './supabase';
 
-import openaiClient from './openai';
-
 const generateAnswer = async ({ message, team, channel, ts, client }) => {
   try {
     /**
@@ -58,7 +56,7 @@ const generateAnswer = async ({ message, team, channel, ts, client }) => {
       ts,
     });
 
-    const slackConverationHistory = await chatHistoryRetriever.get1on1Conversation(true);
+    const slackConverationHistory = await chatHistoryRetriever.retreiveChatHistory(true, null);
 
     // console.log('slackConverationHistory', slackConverationHistory);
 

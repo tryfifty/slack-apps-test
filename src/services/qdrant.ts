@@ -24,7 +24,7 @@ const deleteCollection = async (collectionName: string) => {
   await qdrant.deleteCollection(collectionName);
 };
 
-const insertVectorData = async (collectionName: string, vectorData) => {
+const insertVectorData = async (collectionName: string, vectorData: any[]) => {
   await qdrant.upsert(collectionName, {
     points: [
       ...vectorData.map((data) => ({
@@ -35,10 +35,18 @@ const insertVectorData = async (collectionName: string, vectorData) => {
   });
 };
 
+// const searchByKeyword = async (collectionName: string, keyword: string) => {
+//   const results = await qdrant.search(collectionName, {
+//     query: keyword,
+//     limit: 3,
+//   });
+//   return results;
+// }
+
 const searchVectorData = async (collectionName: string, vector: number[]) => {
   const results = await qdrant.search(collectionName, {
     vector,
-    limit: 5,
+    limit: 3,
   });
   return results;
 };

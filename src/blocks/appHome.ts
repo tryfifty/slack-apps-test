@@ -145,7 +145,7 @@ const appHomeInitialBlocks = ({
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: '*Mention Macdal in any channel* by typing `@macdal` to start a conversation that everyone in the channel can see.\n\nIf you want a private conversation, just send Macdal a *Direct Message* and have a 1:1 chat.\n\n',
+        text: '*Using Macdal in a Group Chat*\n\nTo interact with Macdal in a channel, simply mention `@macdal` and start a conversation. Macdal will respond, and everyone in the channel can see the discussion.\n\n*Using Macdal in a Private DM*\n\nFor a more private interaction, send a Direct Message (DM) to Macdal. You don’t need to mention `@macdal` in a DM—just type your message, and Macdal will respond directly to you.\n\n',
       },
     },
     {
@@ -153,7 +153,7 @@ const appHomeInitialBlocks = ({
       elements: [
         {
           type: 'mrkdwn',
-          text: "*Remember*: Macdal responds in threads, and it will only remember the conversation within that thread. If you start a new thread or conversation elsewhere, it won't remember the previous discussions.",
+          text: "*Important*: Macdal will reply within the thread where you mentioned it. Currently, it only remembers conversations within that specific thread. If you start a new thread or conversation, it won't recall previous discussions. However, we're planning to add this feature in the future.",
         },
       ],
     },

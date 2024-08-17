@@ -26,7 +26,7 @@ export class SlackChatHistoryRetriever {
 
   limit = 10;
 
-  async get1on1Conversation(isNew: boolean) {
+  async retreiveChatHistory(isNew: boolean, user: any): Promise<string> {
     let slackConversations: { messages: any[] };
 
     if (isNew) {
@@ -44,67 +44,50 @@ export class SlackChatHistoryRetriever {
 
     // console.log('slackConversations', slackConversations);
 
-    const chatHistory = slackConversations.messages.map(
-      (message: { app_id: string; text: any; user: any }) => {
+    const sender = await this.slackApp.users.info({
+      user,
+    });
+
+    console.log('sender', sender);
+
+    const senderName = sender.user.real_name || sender.user.name;
+
+    const chatHistory = await Promise.all(
+      slackConversations.messages.map(async (message: { app_id: string; text: any; user: any }) => {
         if (message.app_id && message.app_id === 'A07FV37KKM3') {
           return new Document({
             pageContent: `AI(You) : ${message.text}`,
             metadata: message,
           });
         }
+
+        let cleanedText = message.text;
+        const userIds = cleanedText.match(/<@(\w+)>/g);
+
+        if (userIds) {
+          for (const userId of userIds) {
+            const userInfo = await this.slackApp.users.info({
+              user: userId.replace(/<@|>/g, ''),
+            });
+
+            if (!userInfo) {
+              const userName = userInfo.user.real_name || userInfo.user.name;
+
+              // 사용자 ID를 이름으로 대체합니다.
+              cleanedText = cleanedText.replace(userId, `@${userName}`);
+            }
+          }
+        }
+
         return new Document({
-          pageContent: `User #(${message.user}) : ${message.text}`,
+          pageContent: `User #(${senderName}) : ${cleanedText}`,
           metadata: message,
         });
-      },
+      }),
     );
 
     const combinedContent: string = chatHistory.map((doc: Document) => doc.pageContent).join('\n');
 
     return combinedContent;
   }
-
-  // async _getRelevantDocuments(
-  //   query: string,
-  //   // runManager: CallbackManagerForRetrieverRun,
-  // ): Promise<Document[]> {
-  //   // 여기서 쿼리를 보고 기존의 메세지가 필요할지 안할지 판단할 수 있을까?
-
-  //   // if ts is null then get the latest message from the channel
-
-  //   let slackConversations;
-
-  //   if (this.ts === null) {
-  //     console.log('ts is null', this.channel);
-  //     slackConversations = await this.slackApp.conversations.history({
-  //       channel: this.channel,
-  //       latest: this.ts,
-  //       limit: 1,
-  //     });
-  //   } else {
-  //     slackConversations = await this.slackApp.conversations.replies({
-  //       channel: this.channel,
-  //       ts: this.ts, // 스레드의 부모 메시지 타임스탬프
-  //       limit: 10, // 최근 10개의 메시지만 가져오기
-  //     });
-  //   }
-
-  //   /**
-  //    * TODO:: bot_id가 constant로 정의되어 있어서 이 부분을 수정해야 함.
-  //    */
-  //   const chatHistory = slackConversations.messages.map((message) => {
-  //     if (message.bot_id && message.bot_id === 'B07B1LA8VU7') {
-  //       return new Document({
-  //         pageContent: `AI(You) : ${message.text}`,
-  //         metadata: {},
-  //       });
-  //     }
-  //     return new Document({
-  //       pageContent: `User #(${message.user}) : ${message.text}`,
-  //       metadata: {},
-  //     });
-  //   });
-
-  //   return chatHistory;
-  // }
 }

@@ -1,6 +1,7 @@
 import { App } from '@slack/bolt';
 import { Express, Request, Response } from 'express';
 
+import fs from 'fs';
 import { supabaseClient } from '../services';
 import msgConnection from '../blocks/messageConnect';
 import appHomeInitialBlocks from '../blocks/appHome';
@@ -14,7 +15,7 @@ import {
   insertNotionIntegrationInfo,
   upsertNotionConnection,
 } from '../services/supabase';
-import { getAccessToken, getNotionPages } from '../services/notion';
+import { getAccessToken, getNotionPageLoader, getNotionPages } from '../services/notion';
 import notionDataLoader from '../loaders/notionDataLoader';
 import split from '../splitters/notionDataSplitter';
 import embedding from '../embedders';
@@ -139,98 +140,111 @@ const controllers = (app: Express, slackApp: App) => {
       /**
        * TODO: Should improve updating logic. (ig, versioning maybe?)
        */
-      if (isCollectionExist(team_id as string)) {
-        console.log('Collection Delete');
-        await deleteCollection(team_id as string);
-      }
+      // if (isCollectionExist(team_id as string)) {
+      //   console.log('Collection Delete');
+      //   await deleteCollection(team_id as string);
+      // }
 
-      await createCollection(team_id as string);
+      // await createCollection(team_id as string);
 
       const notionConnection = await getNotionConnection(team_id as string);
 
       const { access_token } = notionConnection;
-      const { results } = await getNotionPages(access_token);
+      const results = await getNotionPages(access_token);
+
+      console.log(results.length);
+
+      let pages = [];
 
       for (const page of results) {
-        const pageId = page.id;
-
         // console.log(page);
+        const pageId = page.id;
+        const type = page.object;
 
-        const notionData = await notionDataLoader(access_token, pageId);
+        console.log(pageId, type);
 
-        // console.log(notionData);
+        const notionData: Document[] = await notionDataLoader(access_token, pageId, type, results);
 
-        const pageDocs = await split(notionData);
-        const texts = pageDocs.map((doc) => doc.pageContent);
-        const vectors = await embedding(texts);
+        fs.writeFileSync(`${pageId}.json`, JSON.stringify(notionData));
 
-        const vectorData = [];
+        console.log(`processed ${pageId} pages`);
 
-        for (let j = 0; j < pageDocs.length; j += 1) {
-          const doc = pageDocs[j];
-          const vector = vectors[j];
-
-          vectorData.push({
-            vector,
-            payload: {
-              content: doc.pageContent,
-              metadata: doc.metadata,
-            },
-          });
-
-          await insertVectorData(team_id as string, vectorData);
-        }
+        pages = [...pages, ...notionData];
       }
+
+      console.log(pages.length);
+
+      // // filter unique page with metadata.notionId
+      const uniquePages = pages.filter((page, index, self) => {
+        return index === self.findIndex((t) => t.metadata.notionId === page.metadata.notionId);
+      });
+
+      console.log(uniquePages.length);
+
+      // for (const notionData of uniquePages) {
+      // console.log(notionData.metadata.notionId);
+      // console.log(notionData);
+
+      const pageDocs = await split(uniquePages);
+      const texts = pageDocs.map((doc) => doc.pageContent);
+
+      const vectors = await embedding(texts);
+
+      const vectorData = [];
+
+      for (let j = 0; j < pageDocs.length; j += 1) {
+        const doc = pageDocs[j];
+        const vector = vectors[j];
+
+        // console.log(doc.metadata);
+
+        vectorData.push({
+          vector,
+          payload: {
+            content: doc.pageContent,
+            metadata: doc.metadata,
+          },
+        });
+      }
+      // await insertVectorData(team_id as string, vectorData);
+      // }
+
+      // console.log(uniquePages);
+
+      // console.log(notionData);
+
+      // // write texts to file
 
       /**
        * TODO: Should be improved
        */
 
-      await deleteNotionIntegrationInfo(team_id as string);
+      // await deleteNotionIntegrationInfo(team_id as string);
 
-      const newNotionDatas = results.map((page) => ({
-        type: page.object,
-        notion_id: page.id,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
-        title: page.properties.title.title[0].plain_text,
-        team_id,
-        connection_id: notionConnection.id,
-      }));
+      // const newNotionDatas = results.map((page) => ({
+      //   type: page.object,
+      //   notion_id: page.id,
+      //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //   title: page.properties?.title?.title[0].plain_text || '',
+      //   team_id,
+      //   connection_id: notionConnection.id,
+      // }));
 
-      await insertNotionIntegrationInfo(newNotionDatas);
+      // await insertNotionIntegrationInfo(newNotionDatas);
 
-      await slackApp.client.chat.update({
-        token: slackConnection[0].installation.bot.token,
-        channel: chat.channel,
-        ts: chat.ts,
-        text: 'Notion workspace connection made successfully!',
-        blocks: msgUpdateComplete({
-          state: user as string,
-          pages: newNotionDatas.map((page) => page.title).join(', '),
-        }),
-      });
-
-      // if (first) {
-      //   console.log(user);
-
-      //   await slackApp.client.views.publish({
-      //     user_id: user as string,
-      //     view: {
-      //       type: 'home',
-      //       blocks: appHomeInitialBlocks({
-      //         user: channel as string,
-      //         notionConnectionStatus: true,
-      //       }),
-      //     },
-      //   });
-
-      //   await slackApp.client.chat.postMessage({
-      //     channel: channel as string,
-      //     text: `Hello, <@${user}>, Ready to ask?`,
-      //     blocks: messageHelp(user as string),
-      //   });
-      // }
+      // await slackApp.client.chat.update({
+      //   token: slackConnection[0].installation.bot.token,
+      //   channel: chat.channel,
+      //   ts: chat.ts,
+      //   text: 'Notion workspace connection made successfully!',
+      //   blocks: msgUpdateComplete({
+      //     state: user as string,
+      //     pages: newNotionDatas
+      //       .filter((page) => page.title !== '')
+      //       .map((page) => page.title)
+      //       .join(', '),
+      //   }),
+      // });
     } catch (error) {
       console.error(error);
     }

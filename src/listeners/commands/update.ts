@@ -54,14 +54,15 @@ const updateCallback = async ({
     const notionConnection = await getNotionConnection(team_id as string);
 
     const { access_token } = notionConnection;
-    const { results } = await getNotionPages(access_token);
+    const results = await getNotionPages(access_token);
 
     for (const page of results) {
       const pageId = page.id;
+      const type = page.object;
 
       // console.log(page);
 
-      const notionData = await notionDataLoader(access_token, pageId);
+      const notionData = await notionDataLoader(access_token, pageId, type, results);
 
       // console.log(notionData);
 
@@ -97,7 +98,6 @@ const updateCallback = async ({
       type: page.object,
       notion_id: page.id,
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
       title: page.properties.title.title[0].plain_text,
       team_id,
       connection_id: notionConnection.id,

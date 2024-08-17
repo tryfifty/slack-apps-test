@@ -1,4 +1,4 @@
-import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+import { MarkdownTextSplitter } from '@langchain/textsplitters';
 
 /**
  * TODO: Should improve the splitter.
@@ -6,16 +6,16 @@ import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
  * There are so many types in Notion Page.
  * How to handle them?
  */
+const chunkSize = 1000;
+const chunkOverlap = 100;
+
 const split = async (data: any) => {
-  const separators = RecursiveCharacterTextSplitter.getSeparatorsForLanguage('markdown');
+  // const separators = RecursiveCharacterTextSplitter.getSeparatorsForLanguage('markdown');
   // console.log({ separators });
 
-  const splitter = new RecursiveCharacterTextSplitter({
-    separators,
-    chunkSize: 1000,
-    chunkOverlap: 100,
+  const splitter = new MarkdownTextSplitter({
+    chunkSize,
   });
-
   const pageDocs = await splitter.splitDocuments(data);
   return pageDocs;
 };

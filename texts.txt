@@ -1,0 +1,771 @@
+**Overview**
+
+
+Development of an outsourced collaborative app platform that enables the sharing and monetization of generative AI-created works.
+
+
+**Objective**
+
+
+To monetize by developing a platform for sharing generative AI-created works.
+
+
+Milestone
+
+
+| Stage | Objective       | Details          | Remarks       | QA                                    | Schedule                       |
+| ----- | --------------- | ---------------- | ------------- | ------------------------------------- | ------------------------------ |
+| 1st   | Minimum MVP     | Login to payment | Close Beta    | Panel of 20 judges                    | Early May                      |
+| 2nd   | Intermediate    | 80% completion   | Open Beta     | Open in Korea (press release)         | Early June                     |
+| 3rd   | Full Completion | 100% completion  | Official Open | Official launch (YouTube advertising) | Early June (government review) |
+
+
+# **Detailed Implementation Plan**
+
+
+**1st Stage (Early May)**
+# **Detailed Implementation Plan**
+
+
+**1st Stage (Early May)**
+### **Date Notation (Important!!):**
+
+	- **US Date Format**: MM DD, YYYY (e.g., Jun 19, 2023)
+	- **Japan Date Format**: YYYY/MM/DD (e.g., 2023/06/19)
+	- **Korea Date Format**: YY.MM.DD (e.g., 23.06.19)
+	1. **US Number Notation:**
+		- 1,000 to 999,999: 10K to 999K
+		- 1,000,000 to 999,999,999: 1M to 999M
+		- 1 trillion and above: 1T~
+		- Decimal points are not used.
+		- Applies to view counts, save counts, subscriber counts, comment counts, and likes.
+
+	![참조사진](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/092fa78b-a759-47b5-b115-7a663d2dab21/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140106Z&X-Amz-Expires=3600&X-Amz-Signature=d04a8e4074dcf07d5a8abc4422cba2995d4b17c70ac5e6b400f10c47fd981e2b&X-Amz-SignedHeaders=host&x-id=GetObject)
+1. **Korea Number Notation:**
+	- 1 to 9,999: exact number
+	- 10,000 to 99,999,999: n.n만
+	- 100,000,000 to 999,999,999: n.n억
+	- 1 trillion and above: n.n조
+	- Decimal points are used up to the first place; the second place is omitt
+
+**Landing Page (Same for WEBTOON and NOVEL)**
+- **No Viewing History**: The sections **`Recently Viewed Works`** and **`Algorithm Recommendations`** will not be displayed.
+- **With Viewing History**: Features will be listed according to the numbers below.
+- In the Korean version, **`Popular Ranking`** is listed right below **`Recently Viewed Works`**. Refer to Figma for details.
+- The Korean version does not include genre captions under thumbnails.
+- In the Korean version, the ranking shows the author's name instead of the genre.
+1. **`Search Function`**: Detailed separately below.
+2. **`Top Banner`**: Displays 5 sliding works in the format of 900*1000px images, including gradients.
+	- Features: genre, views, saves, title, page number, search.
+	- Settings must be configured in `Admin`.
+3. **`Recently Viewed Works`**: Lists 3 most recent views (left to right).
+	- If more than 3, a "more" tab appears, leading to `Library`.
+	- Features: thumbnail, genre, title.
+- Features: thumbnail, genre, title.
+4. **`Recommended for You`**: Recommends works from the genre of the latest viewed work.
+	- Not displayed if there are no viewed works or if onboarding is not completed.
+	- After algorithm system design: uses the algorithm for recommendations.
+	- Features: thumbnail.
+5. **`Top Trending`**:
+	- Not displayed at **0 minutes and 0 seconds**.
+	- After 6 hours of release: (views + likes + payment counts in the last 3 hours) / (views + likes + payment counts from 3-6 hours ago) = percentage change. Top 5 works with the highest percentage change, updated every 3 hours.
+6. **`Most Popular`**:
+	- Not displayed at **0 minutes and 0 seconds**.
+	- After release: (total of average views + likes + payment counts + comments from 12 hours ago) + (total of average views + likes + payment counts + comments from 24 hours ago) = ranking. Updated every 12 hours.
+	- Formula needs improvement to include views, likes, comments, etc.
+7. **`New Releases`**:
+- Formula needs improvement to include views, likes, comments, etc.
+7. **`New Releases`**:
+	- First 5 works with the first episode registered.
+8. **Editor's Pick**:
+	- Admin registers 5 works, displayed randomly each time the home page is accessed.
+9. **`Onboarding Banner`**:
+	- Directs to the onboarding page.
+	- Steps:
+		1. Select type (WEBTOON/NOVEL/Both).
+		2. Select preferred genres (up to 3).
+		- Recommends 21 works based on selected genres.
+		- If "I don’t know" is selected, recommends 21 works randomly by popularity.
+		- Similarity ranking from high to low based on selected genres (e.g., selecting romance, school, thriller: first displays works matching all 3 genres, then 2, then 1).
+10. **`Toonbe News`**:
+	- Registered by `Admin`. Includes news about discount events, etc.
+	- No automatic slide.
+	- Features: thumbnail, title, content.
+11. **`Genres`**:<aside>
+💡 [***Order***](https://www.youtube.com/watch?v=fDxVNLUG-K8)</aside>
+	- Order set by `Admin`.
+Romance: Heart-warming 💓 Romance
+
+
+	Drama
+
+
+	Fantasy: Out of this world 🔮 Fantasy
+
+
+	Thriller
+
+
+	School Stories: Those were the days... 🏫 School Stories
+
+
+	Comedy: Bust your gut 🗯️ Comedy
+
+
+	Slice of Life
+
+
+	Action
+
+
+**Login/Sign Up**
+
+- **Login**
+
+	_**Custom Login Basics**_
+
+	- **AOS**: Google Login
+	- **iOS**: Apple Login + Google Login
+	- **Additional Social Login**: Facebook, Twitter, etc.
+- **Forgot Password**
+	1. Enter the registered email address.
+	2. A link to change the password is sent to the entered email address.
+	3. Enter a new password + confirm the new password = change complete.
+	- Note: The link expires in 30 minutes. If the link is clicked after the time limit, it redirects to an expired link notification page.
+- Once login is complete, proceed to set a nickname and **onboarding**.
+
+**Works + Episodes**
+**Works + Episodes**
+
+
+![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/63e2781d-031a-4ea7-b106-78356f94487c/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140102Z&X-Amz-Expires=3600&X-Amz-Signature=3985d5ef2e01ea7be974528b84bd2055eeb25c659c0f79e4aae38e82c8481c31&X-Amz-SignedHeaders=host&x-id=GetObject)
+
+- **Works**
+	- Horizontal Thumbnail: 100px gradient + adult content badge.
+	- Top Icon: 6px away from the safety zone.
+	- Support
+	- Save to Favorites
+	- Share
+	- Notifications
+	- Back Button
+
+	**Episode Notifications**: Subscribing to a work turns notifications on automatically, and the icon appears. Notifications can be toggled on/off while subscribed. Unsubscribing turns notifications off automatically.
+- Genre
+	- View Count: Counts regardless of anonymity or login status; multiple clicks are counted.
+	- Favorite Count
+	- Title: 30 characters
+	- Nickname: 20 characters
+	- ~~Generative AI Utilization Badge (1, 2, 3, 4 levels)~~ Canceled at Leo's request.
+	- Summary: 300 characters
+- **Episodes**
+	- Thumbnail: 1080 x 1080px
+	- Episode Title: 30 characters
+	- Likes Count
+	- Comments Count
+	- Publish Date
+	- Preview (Peek Pass): Displays thumbnails of the 3 most recent preview episodes.
+	- Purchased episodes are listed in an accordion but are dimmed and without icons.
+	- Episode Types:
+		- Free
+		- Paid
+		- Paid/Owned
+		- Read Indicator + Last Read
+
+**Episode Viewing**
+
+- **WEBTOON (Vertical) / TAPTOON (Horizontal)**
+**Episode Viewing**
+
+- **WEBTOON (Vertical) / TAPTOON (Horizontal)**
+
+![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/cc2593b9-d143-4a76-a4a7-22cac5b4e16f/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140102Z&X-Amz-Expires=3600&X-Amz-Signature=1e12d668ad19190eff7b8d7d2fee7ad410a2719c52ff2cd8a2f0270aa090bf6c&X-Amz-SignedHeaders=host&x-id=GetObject)
+- **Navigator**
+- **Slider**
+- **Previous Episode Button**
+- **Comment Section Button**
+- **Episode List Button**
+- **Next Episode Button**
+- **TAPTOON Onboarding**: TAPTOON explanation + left tap + right tap.
+- **Last Page**:
+	- Top Tap Share: OS default share screen.
+	- Next Episode Button
+	- Like
+	- Save to Favorites (work)
+	- Share: OS default share screen.
+	- Top Comments (up to 2)
+	- Similar Works (5): Sorted by genre similarity from high to low. Will be enhanced with the algorithm in the future.
+- **Comments**:
+	- Best Comments: Total 100 characters, nickname, content, BEST comment badge, date, like, dislike, report, block, delete.
+	- Logic: Likes - Dislikes >= 10, up to 3 best comments. Lower like counts are excluded. If likes are equal, the most recently posted comment is selected as the best comment.
+
+**Payment**
+
+
+Payment is divided into **`Cash Charge`**, which involves real currency (in-app purchases), and **`Episode Payment`**, which uses charged cash.
+- **Cash Charge**
+
+	**Purchase**
+
+	- AOS/iOS in-app purchase
+	- Prices include a 20% service fee compared to the existing Toonning web page (₩1,000 → ₩1,200).
+	- Consumable items category (iOS App Store standard)
+
+	**Purchase Flow**
+
+	- Purchasing episodes from the episode list
+	- If insufficient cash: > Redirect to cash charge page > Complete charging > Return to episode purchase modal
+	- If sufficient cash: > Purchase modal > Purchase complete > Open episode immediately
+	- Purchasing previous/next episodes while reading
+	- If insufficient cash: > Redirect to cash charge page > Complete charging > Return to purchase modal
+	- If sufficient cash: > Purchase modal > Purchase complete > Open episode immediately
+	- From My Page > Cash Charge page
+	- Charge > Payment > Charging complete
+	- Payment error
+	- Redirect to payment error page (On confirmation, return to previous page without modal)
+
+	**Refund**
+
+
+	Summary:
+
+
+	iOS
+**Refund**
+
+
+	Summary:
+
+
+	iOS
+
+	- In-app purchases are processed through the payment method registered in the App Store, and purchases can be canceled via Apple Customer Support within 7 days.
+	- Reasons for cancellation include: Toonbe not functioning properly, inability to access in-app purchased content, **unused purchased cash within 7 days**, etc.
+	- Refunds are not available for other reasons or after 7 days.
+	- Used cash cannot be refunded.
+	- [**Apple Media Services Terms and Conditions**](https://developer.apple.com/documentation/storekit/transaction/3803220-beginrefundrequest/)
+
+	AOS
+
+	- Refunds for cash purchased through Google Play can be requested through Google Play Customer Support within 48 hours, and after 48 hours through Toonning Customer Support.
+	- Reasons for cancellation include: Toonbe not functioning properly, inability to access in-app purchased content, unused purchased cash within 7 days, etc.
+	- Used cash cannot be refunded.
+- **Episode Payment**
+**Purchase**
+
+	- Purchase 1 episode or remaining unpaid episodes
+	- No discounts
+	- Example: Click on episode 6 out of 100 > Purchase episode 6 or all 100 episodes
+	- Example: Episodes 1, 2, and 3 are paid, 10 episodes available, click on episode 5 > Purchase episode 5 or all 7 episodes
+	- Purchasing episodes from the episode list
+	- If insufficient cash: > Redirect to cash charge page > Complete charging > Return to episode purchase modal
+	- If sufficient cash: > Purchase modal > Purchase complete > Open episode immediately
+	- Purchasing during episode reading
+	- If insufficient cash: > Redirect to cash charge page > Complete charging > Return to purchase modal
+	- If sufficient cash: > Purchase modal > Purchase complete > Open episode immediately
+	- Payment error
+	- Redirect to payment error page (On confirmation, return to previous page without modal)
+
+	**Refund**
+**Refund**
+
+	- Since episodes open immediately after purchase, refunds are generally not expected.
+	- Refunds and compensations are handled through Toonning Customer Support.
+	- If an episode is purchased but images or text cannot be viewed due to an error, it is considered as not consuming cash, thus eligible for a refund.
+	- Used cash for purchased episodes cannot be refunded.
+
+	Below is an example of refunds in a situation where there is existing charged cash and newly charged cash:
+
+
+	![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/abf49d32-f687-4cbf-8c21-d1a8c4a1222b/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140106Z&X-Amz-Expires=3600&X-Amz-Signature=1ebfd757e316c6253dcdca6b8a5fb54cfbb7c22c93aaabb7972041bb86607586&X-Amz-SignedHeaders=host&x-id=GetObject)
+**My Page - Payment Management**
+
+- **Charge History**:
+	- Charge history list with a filter (query period).
+	- Transaction receipt (payment method, purchase amount, payment date and time, transaction item) sent via email for each payment.
+- **Usage History**:
+	- Usage history list with a filter (query period).
+	- Detailed history (work title, episode title, payment method, purchase amount, payment date and time).
+- **Episode Purchase**
+- **Support**
+- **Multiple Episode Purchase**
+- **Payment Terms**: Link to Notion page for payment terms.
+
+**My Page - Announcements**
+
+- **Title-Date List Format**: Displays a list of announcements with titles and dates.
+- **Detailed View**: Users can click on a specific announcement to view the full content.
+
+**Search**
+**Search**
+
+- **Recent Searches**: Up to 10 recent searches are displayed. Option to delete all.
+	- Recent searches remain even after logout.
+	- Recent searches are stored by device, not by user ID.
+- **Popular Keywords**: Top 10 keywords searched in the last 3 hours. Sorted alphabetically if the number of searches is the same.
+	- Automatically removed if present in the prohibited words database.
+- **Recommendations for You!**: Top 3 works based on searches in the last 3 hours. Sorted alphabetically if the number of searches is the same.
+1. **Accuracy Order**: Uses the existing Toonning logic. When at the same level, prioritize authors over work titles. If still the same, prioritize by popularity (total views over the entire period, not the average).
+
+	```javascript
+	Example: Searching for "아라"
+	Results:
+	- 아라의 일기
+	- 신아라의 일기
+	- 아 신아라
+	- 아 라이브 일기 (least relevant, appears at the bottom)
+```
+
+2. **Newest Order**: Based on accuracy, with the newest works at the top of the search results.
+3. **Popularity Order**: Based on accuracy, with the most viewed works at the top of the search results.
+
+For authors:
+
+1. **Accuracy Order**: Based on the accuracy of the author’s name.
+2. **Newest Order**: Based on the most recent role received by the author.
+3. **Popularity Order**: Based on the number of fans in the workspace.
+
+**My Page - My Account**
+**My Page - My Account**
+
+- **Nickname**:
+	- 2-20 characters, including Korean/English/special characters. Must be unique.
+	- Initially assigned as user+random alphanumeric combination (e.g., userA3l7s2).
+- **Login Management**:
+	- **Custom Account**:
+		- User Name (cannot be changed)
+		- Account ID (email)
+		- Delete Account
+		- Change Password
+	- **Social Login Account**:
+		- User Name (cannot be changed)
+		- Linked Account (social media)
+		- Delete Account (Google, Apple login)
+- **Privacy Policy**: Link to Notion page.
+- **Logout**: "Are you sure you want to log out?" Cancel/Confirm.
+
+**My Page - Settings**
+**My Page - Settings**
+
+- **Episode Update Push Notifications** (toggle)
+- **Event and Recommendation Notifications** (toggle)
+	- **Toggle ON**: Displays "You have agreed to receive event and recommendation notifications as of 23.12.31."
+		- **Night Time Notifications (9 PM - 8 AM)** (toggle): Adjustable only if event notifications are enabled.
+	- **Toggle OFF**: Displays "You have declined event and recommendation notifications as of 23.12.31."
+- **Language Settings** (version 2.0.0):
+	- 한국어
+	- English
+	- 日本語
+	- Français
+	- Tiếng Việt
+- **Clear Cache Data**
+
+**+Work Creation and Episode Upload** (Details available on the author admin detail page) Please review and proceed with the tasks!!
+---
+
+
+2nd Stage (Early June)
+
+
+**Library**
+
+- **Favorites**:
+	- Display in 3 rows
+	- Sorting options: recently added, oldest, episode update order
+- **Recents**:
+	- Display in 3 rows
+- **My Collections**:
+	- Display work title, author name, and the number of collected items
+	- Clicking moves to the `Collection Page`
+	- From the `Collection Page`, users can navigate to the `Original Work Page`
+	- If the original work is deleted, it can still be viewed from the `Collection Page`
+- **Creators**:
+	- Display profile picture, nickname, number of fans (subscribers), and number of works
+	- Clicking moves to the author's workspace
+
+**Work Creation**
+**Work Creation**
+
+- **Thumbnail**:
+	1. Vertical: 800px x 1200px
+	2. Horizontal: 720px x 372px
+	3. Landing: 900px x 1000px (create on request if needed)
+- **Work Title**: Up to 30 characters
+- **Work Introduction**: Up to 300 characters
+- **Generative AI Utilization**: Specify if generative AI is used
+- **Work Format**: Choose between WEBTOON or TAPTOON
+- **Genre Selection**:
+	- Romance
+	- Drama
+	- Fantasy
+	- Thriller
+	- School Stories
+	- Comedy
+
+**Author Admin**
+
+- **Onboarding**
+
+	![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/290c9788-d36b-49e5-b3f6-133013f31006/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140106Z&X-Amz-Expires=3600&X-Amz-Signature=e1fde5a2d516ef9b2d5093e9659082ed3e80e5c14393c8ab1e59158bc2fcafb8&X-Amz-SignedHeaders=host&x-id=GetObject)
+- Only authors with an approved role can log in.
+- **My Workspace**
+
+	![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/4f69e310-bd8a-473b-a657-0a7b2742996f/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140106Z&X-Amz-Expires=3600&X-Amz-Signature=36238dbce620a32d769f644225ba91d7cce3b095560dfcc02891bcec5ada8b1d&X-Amz-SignedHeaders=host&x-id=GetObject)
+![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/0682f27d-9951-42d9-8e7d-f50964c10609/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140106Z&X-Amz-Expires=3600&X-Amz-Signature=a6ce334999cf5bd1c343ab70d0ac009f5de5bcb54acf35a0954eb7637127438d&X-Amz-SignedHeaders=host&x-id=GetObject)
+
+	- Edit workspace name.
+	- Edit workspace introduction.
+	- Save.
+	- Add work.
+	- Enter work - episode.
+	- Create work:
+		- Choose between Webtoon/Novel.
+		- Work title: 30 characters.
+		- Work introduction: 300 characters.
+		- Thumbnail according to specifications. If it doesn't match, reject with a modal.
+		- Co-author: Select and create. An acceptance email is sent to the co-author. It is not visible externally until accepted.
+![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/0d2f49ab-4d1f-4fa2-9d5e-36ee2bf291bf/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140106Z&X-Amz-Expires=3600&X-Amz-Signature=65f71fe4a731a0cdee7b5ec7529633dba26758a061a5e0a4707380ec925601ed&X-Amz-SignedHeaders=host&x-id=GetObject)
+
+	- Create episode:
+		- If the publishing setting is "Preview", it must be designated as a paid episode. Cash input is required.
+![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/52b974a8-1278-46a3-8dac-a110437efd30/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140107Z&X-Amz-Expires=3600&X-Amz-Signature=44b229ef7bf57c6622d66ae87ceed2a36e39044e3d7814526d72ebf51c6e22d6&X-Amz-SignedHeaders=host&x-id=GetObject)
+
+		- Regardless of whether the episode is free or paid, "Scheduled Publishing" can be set.
+			- Scheduled episodes are not displayed in the episode list on the service page.
+![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/e0a378bc-26ac-4266-bf6e-a3a9557abd40/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140107Z&X-Amz-Expires=3600&X-Amz-Signature=d74d4e6b3f6702dffb011e41f1b0669d7a7ca65405241175577dd4973ae1b424&X-Amz-SignedHeaders=host&x-id=GetObject)
+
+- **Dashboard**
+	- **Overview**: Comprehensive check.
+		- Recent episodes (3)
+		- Views, earnings, thumbnail, title
+		- Views this month
+		- Views
+		- Results compared to last month
+		- Top 5 popular episodes by views
+	- **Content**
+		- Episode + posting date
+		- Publication status: Published / Scheduled / Restricted (blocked due to reports)
+		- Views
+		- Comments
+		- Likes
+		- Duration (average reading time of the episode)
+		- Earnings
+		- Pagination: 10 pages
+> 💡 Filters:  
+		> - Period filter: 1 day, 1 week, 1 month, 1 year, all time  
+		>   
+		> - Sort filter: Newest, oldest, most popular (based on top results)
+
+			- Period filter: 1 day, 1 week, 1 month, 1 year, all time
+			- Sort filter: Newest, oldest, most popular (based on top results)
+
+		Top results calculation: Views + comments + likes + duration + earnings = top results based on total.
+
+	- **Traffic Source**
+		- Impressions (where and how many times the work was displayed)
+		- Landing page, search, recommendation tab in episodes, events
+		- Clicks (on displayed items)
+		- Landing page, search, recommendation tab in episodes, events
+		- Click-through rate (ratio of clicks to impressions)
+		- Displayed as count + percentage
+
+		> 💡 Filters:  
+		> - Period filter: 1 day, 1 week, 1 month, 6 months, 1 year, all time
+
+			- Period filter: 1 day, 1 week, 1 month, 6 months, 1 year, all time
+	- **Fans · Subscriptions**
+		- Subscriptions
+		- Subscription increase trend by work
+> 💡 Filters:  
+		> - Period filter: 1 day, 1 week, 1 month, 6 months, 1 year, all time  
+		>   
+		> - Sort filter: Newest, oldest, most popular (based on top results)
+
+			- Period filter: 1 day, 1 week, 1 month, 6 months, 1 year, all time
+			- Sort filter: Newest, oldest, most popular (based on top results)
+		- Fans
+		- Fan increase trend
+
+		> 💡 Filters:  
+		> - Period filter: 1 day, 1 week, 1 month, 1 year, all time  
+		>   
+		> - Sort filter: Newest, oldest, most popular (based on top results)
+
+			- Period filter: 1 day, 1 week, 1 month, 1 year, all time
+			- Sort filter: Newest, oldest, most popular (based on top results)
+		- Subscriber ratio
+		- Ratio of subscribers reading episodes / total episodes read
+
+		> 💡 Filters:  
+		> - Period filter: 1 day, 1 week, 1 month, 1 year, all time  
+		>   
+		> - Sort filter: Newest, oldest, most popular (based on top results)
+- Period filter: 1 day, 1 week, 1 month, 1 year, all time
+			- Sort filter: Newest, oldest, most popular (based on top results)
+- **Revenue Information**
+	- **Before Revenue Application**
+		- Total views over 10,000 → Revenue application button activates (notification sent via email for eligibility)
+		- Status: Before application / Under review / Approved / Rejected
+	- **Revenue Application Available**
+		- Enter personal information:
+			- USA: Routing number, account number, check number + additional information (to be inquired with partners later)
+			- Korea: Tax form (residency in Korea, individual/business status), name, national ID number, phone number, state
+			- Account holder name, bank name, account number, ID copy, bankbook copy
+		- Revenue is paid once a month on the 25th. Amounts under ₩100,000 are carried over to the next month. Payments under ₩100,000 are not possible.
+		- Identity verification (phone number, Korea)
+- Identity verification (phone number, Korea)
+			- If the window is closed during entry, the revenue application button resets.
+			- Entries are not saved. Modal displays.
+- **My Revenue**
+	- Revenue information: If revenue application is not started, the My Revenue page is not visible.
+	- **My Revenue**
+		- Date (year, month)
+		- Total revenue
+		- Free cash revenue
+		- Paid cash revenue
+		- Support revenue
+		- Payment status
+		- Payment pending: Accumulated amount over ₩100,000, scheduled for normal payment on the 25th of the next month
+		- Payment hold: Accumulated amount under ₩100,000, carried over to next month's payment
+		- Payment completed: Accumulated amount over ₩100,000, paid normally on the 25th of the next month
+		- Payment not possible: Due to account issues, work suspension, account suspension, or other issues
+		- Payment date (year, month, day)
+		- Expected payment date displayed for pending payments
+- **Partners Plan**: X
+	- Not included in the first phase
+- **Partners Plan**: X
+	- Not included in the first phase
+	- Refer to Rocket Punch
+	- Information on what search terms are used for my works, detailed user entry information, etc.
+- **Settings**: X
+	- Not included in the first phase
+- **Help Center**
+	- Search
+	- Category chips (all, revenue, etc.)
+	- FAQ list
+	- Pagination
+**Question Detail Page**
+
+	- Title
+	- Category chip
+	- Content (image attachment possible)
+
+**Notifications**
+
+- **No Notification Box**: Only push notifications are sent; they are not stored in a personal inbox.
+- **Notification Categories**: `Announcements` / `Events` / `Episode Updates`
+- **Email Notifications for Episode Updates**:
+	- Email content: New episode update for subscribed works.
+	- Email footer: Option to unsubscribe from email updates.
+	- No buttons, just a link to "See in Tooning World App!"
+
+		![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/0f36d1a1-1d43-4cc8-bf16-5cc856cbd647/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140107Z&X-Amz-Expires=3600&X-Amz-Signature=6ae69eb671b550f96ecb003d06c1b33e1e08188909edaeb5e29efa5e378a2ace&X-Amz-SignedHeaders=host&x-id=GetObject)
+![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/50535e8c-db8a-4916-9767-6ab58b885e43/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140107Z&X-Amz-Expires=3600&X-Amz-Signature=23b7b6d55e0fdcbad53325ed6ce2e8752483ea0b384fc9a39db37132873120ab&X-Amz-SignedHeaders=host&x-id=GetObject)
+
+
+		Reference: No image in the middle
+
+- **Types of Push Notifications**:
+
+	> 💡 **Announcements**: Redirects to My Page - Announcements.
+
+
+	> 💡 **Events**: Redirects to either a popup banner or My Page - Announcements.
+
+
+	> 💡 **Episode Updates**: Redirects to the work.  
+	> - Episode notifications: Subscribing to a work automatically turns on notifications, and the icon appears. Notifications can be toggled on/off while subscribed. Unsubscribing turns off notifications automatically.
+- Episode notifications: Subscribing to a work automatically turns on notifications, and the icon appears. Notifications can be toggled on/off while subscribed. Unsubscribing turns off notifications automatically.
+
+**My Page - Basics**
+
+	- **Profile Section**:
+		- Profile Picture/Nickname
+		- My Workspace
+		- Cash Balance (Recharge)
+	- **Settings**
+	- **My Account**: ~~_Not accessible before login_~~
+	- **Payment Management**: ~~_Not accessible before login_~~
+	- **Announcements**:
+		- Registered by admin
+		- Consists of title, date, image, and content
+		- Title should be concise to prevent UI issues
+	- **Help Center**:
+		- Managed by editor admin
+	- **Service Inquiries**: ~~_Not accessible before login_~~
+	- **Service Information**
+---
+
+
+3rd Stage (Early June - Mid-term Evaluation)
+
+
+**Workspace**
+
+- **Entry Routes**:
+	- Search → Author
+	- Work → Tap on author name
+	- My Library → Creator
+	- Automatically assigned upon account creation - similar to Instagram
+
+<aside>
+💡 **General User Permissions**:
+
+- Edit workspace name
+- Edit workspace introduction
+- Follow other accounts (one-way following, not mutual)
+
+💡 **Author User Permissions**:
+
+- Edit workspace name
+- Edit workspace introduction
+- Access to `Author Admin` site
+</aside>
+
+![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/85c64524-37cc-47e8-9088-6f82ece2cb6f/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140105Z&X-Amz-Expires=3600&X-Amz-Signature=fb4612460019d89b7776b01392db85be46da5b62676a4548a13e78318ffd8633&X-Amz-SignedHeaders=host&x-id=GetObject)
+- **Workspace Details**:
+	- Title: Up to 30 characters
+	- Description: Up to 300 characters
+	- List of works
+
+![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/8e70e356-3ee1-47f8-9f5e-be4e283d0f5d/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140105Z&X-Amz-Expires=3600&X-Amz-Signature=c997c7e2ee3d95b8a6afdb80774a32f26859c43486cea472168d9d024b54814f&X-Amz-SignedHeaders=host&x-id=GetObject)
+
+
+**My Page - Help Center**
+
+- **Managed by Editor Admin**: All content and functions are centrally managed.
+- **Question Categories**: Organized by different topics for easy navigation.
+- **Search Function**: Allows users to search for specific questions or topics.
+- **1:1 Inquiry Function**: Enables users to submit personal inquiries directly to support.
+
+**My Page - Service Inquiries**
+**My Page - Service Inquiries**
+
+- **Inquiry Types**:
+	- Payment Issues
+	- Cash Refunds
+	- Usage Issues
+	- Rights Infringement
+	- Content Issues
+	- Feature Suggestions
+	- Others
+- **Inquiry Content**: Up to 300 characters
+- **Image Attachment**: Can attach jpg, jpeg, png files
+- **Contact Email Address**: Responses can be sent via the 2.0.0 Admin system
+
+**Upload Admin (For Creators)**
+
+- **Workspace Creation**
+	- Title: Up to 30 characters
+	- Description: Up to 300 characters
+	- Check for no infringement of others' rights and no defamation
+- **Workspace**
+	- Edit button
+	- Create new work button
+- **Work Creation**
+	- Horizontal thumbnail
+	- Vertical thumbnail
+	- Title: Up to 30 characters
+	- Description: Up to 300 characters
+	- AI Utilization: Specify if AI is used
+	- Work Format: Choose between Webtoon/Taptoon
+	- Genre Selection
+	- Language Setting
+	- Keyword Insertion (priority after 2.0.0)
+
+**Thumbnail Badges (Under Modification)**
+**Thumbnail Badges (Under Modification)**
+
+- **Placement**:
+	- Landing (Vertical) (excluding Popular Ranking)
+	- Library
+- **Badges**:
+	- TAPTOON (to be added later when the number of webtoon-style works increases)
+	- UP (Episode Update)
+
+**Super Admin**
+
+- **Landing Management**
+	- **Top Banner**
+		- Register, reorder, delete
+		- Upload & register images
+	- **Editor's Pick**
+		- Register, reorder, delete
+		- Upload & register images
+	- **Tooning News**
+		- **News Management**
+			- Search posts
+			- Delete/edit posts
+
+			> 💡 **Post Status Types**: Published / Pending (scheduled) / Draft (saved while writing) / Trash (deleted from the management page)
+
+		- **Create News**
+			- Thumbnail: Insert main banner image
+			- Post creation: Attach files (images, videos, GIFs), basic text editing settings, text color and background color settings, hyperlinks, fullscreen view
+![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/04eab0d5-7f90-4bc9-8c29-5d7e9513c539/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140107Z&X-Amz-Expires=3600&X-Amz-Signature=a36e8dd91f18b1278272a61ad345f0640f9af4616f8514ae662034d4289fbf40&X-Amz-SignedHeaders=host&x-id=GetObject)
+
+			- Publish settings: Immediate publish / scheduled publish
+
+			> 💡 **Post Status Types**: Published / Pending (scheduled) / Draft (saved while writing) / Trash (deleted from the management page)
+
+			- Event period setting: From 20xx xx xx xx:xx to 20xx xx xx xx:xx / permanent setting
+
+			> 💡 For time-limited discount events, once the event period is over, the news is no longer displayed on the main screen. However, this is treated separately from publish settings → treated as expired published post.
+- Set related works: For time-limited discount events, add a direct link to the related works.
+	- **Tooning Genre**
+
+		![Untitled.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8eeb76f6-1f69-42c7-8da4-eccbb3f7c214/98468b70-3ac2-44f7-a9a7-ccb56ca0fd22/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45HZZMZUHI%2F20240813%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20240813T140106Z&X-Amz-Expires=3600&X-Amz-Signature=67183c67433a2e09811f21de2e50e23b3586d2c4177fb738ab7deb993cf3cef3&X-Amz-SignedHeaders=host&x-id=GetObject)
+
+
+		> 💡 Currently sorted only by popularity (views) within the genre, but later can be sorted by newness or other criteria to show works that meet specific conditions, defined as ‘category’.
+- Create category
+		- Edit category
+			- Reorder, select genre (8 types), set publish status (toggle off to not display on the main screen), delete
+- **Search Management**
+	- Popular search terms are automatically listed.
+	- Refresh function
+	- Automatically list, delete, add keywords
+	- Save history of existing keywords
+- **Notification Sending**
+	- Send push notifications for ads or event announcements.
+	- Set categories
+	- Write messages
+	- Save draft/schedule/send
+- **Work Management**
+	- Page for comprehensive management of individual works
+	- Author name/nickname, number of works
+		- Detailed page: Login type, registration date, penalty history, work penalties, episode penalties, sales suspension, sales resumption
+- **Member Information**
+	- List of member information
+	- Personal information: name/nickname, login type, registration date, penalty history
+	- User permissions: general/admin/author/beta
+- User permissions: general/admin/author/beta
+	- Payment information button: payment number, payment method, payment date, time, minute, second, refund availability, refund button, full refund button for testing
+- **Inquiry History**
+	- Send replies to service inquiries (can be integrated with Gmail)
+	- **Before processing**: Inquiry content, name/nickname, login type, registration date + reply button
+		- Reply button modal: Title, text editor, content, send, save draft
+	- **Processed**
+- **Report Handling**
+	- Comments or workspaces reported more than 5 times awaiting processing are listed.
+	- **Before processing**
+		- Processing page
+	- **Processed list**
+- **Author Review**
+	- **Before processing**
+		- Name/nickname, login type,
+		- Registration date, penalty history,
+		- Work image,
+		- Accept/reject button
+	- **After processing**
+		- Name/nickname, login type,
+		- Registration date, penalty history,
+		- Work image,
+		- Acceptance/rejection status
+- **Revenue Generation**
+- Work image,
+		- Acceptance/rejection status
+- **Revenue Generation**
+	- **Before processing**: Nickname, work, episode, tax form (residency in Korea, individual/business), name, national ID number, phone number, address, account holder, bank name, account number, ID copy, bankbook copy
+		- Accept/reject
+	- **After processing**: Nickname, work, episode, tax form (residency in Korea, individual/business), name, national ID number, phone number, address, account holder, bank name, account number, ID copy, bankbook copy
+		- Acceptance/rejection status
