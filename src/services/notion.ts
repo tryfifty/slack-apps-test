@@ -1,10 +1,6 @@
-// @ts-nocheck
-
 import { Client } from '@notionhq/client';
-import fs from 'fs';
-import split from '../splitters/notionDataSplitter';
-import embedding from '../embedders';
-import { createCollection, insertVectorData, isCollectionExist } from './qdrant';
+import { NotionToMarkdown } from 'notion-to-md';
+import { Document } from '@langchain/core/documents';
 
 const clientId = process.env.NOTION_OAUTH_CLIENT_ID;
 const clientSecret = process.env.NOTION_OAUTH_CLIENT_SECRET;
@@ -41,8 +37,9 @@ const getAccessToken = async (code) => {
  * I know it's weird but
  * Notion API Doesn't have a method to get Authorized pages or something.
  * Only Search method is available for that purpose for now('24.07).
+ * Search Result contains all pages and databases that user gives access.
  */
-const getNotionPages = async (access_token): any[] => {
+const getNotionPages = async (access_token): Promise<any[]> => {
   const notion = new Client({
     auth: access_token,
   });
@@ -61,122 +58,71 @@ const getNotionPages = async (access_token): any[] => {
     startCursor = response.next_cursor;
   }
 
-  console.log(allPages.length);
+  console.log(`Total Pages: ${allPages.length}`);
 
-  // // 최상위 부모 페이지 찾기
-  let topLevelPages = allPages.filter((page) => {
-    if (page.parent?.type === 'database_id') {
-      return false;
-    }
+  // Exclude pages that are in the database. cause later the database loader parse every children page of the database.
+  // let topLevelPages = allPages.filter((page) => {
+  //   if (page.parent?.type === 'database_id') {
+  //     return false;
+  //   }
 
-    return true;
-  });
+  //   return true;
+  // });
 
-  let database = topLevelPages.filter((page) => {
-    if (page.object === 'database') {
-      return true;
-    }
+  // console.log(`Exclude Child of Database Level Pages: ${topLevelPages.length}`);
 
-    return false;
-  });
+  // // Grep Database only to handle differently
+  // const database = topLevelPages.filter((page) => {
+  //   if (page.object === 'database') {
+  //     return true;
+  //   }
 
-  console.log(database.length);
+  //   return false;
+  // });
 
-  topLevelPages = topLevelPages.filter((page) => {
-    if (page.object !== 'database') {
-      return true;
-    }
+  // console.log(`Database: ${database.length}`);
 
-    return false;
-  });
+  // topLevelPages = topLevelPages.filter((page) => {
+  //   if (page.object !== 'database') {
+  //     return true;
+  //   }
 
-  topLevelPages = topLevelPages.filter((page) => {
-    // 그렇지 않다면, 부모가 다른 페이지인지를 확인
-    // console.log('최 상위 페이지 찾기');
+  //   return false;
+  // });
 
-    if (allPages.some((otherPage) => otherPage.id === page.parent?.page_id)) {
-      console.log('부모 페이지가 이미 존재함');
-      return false;
-    }
+  // // SubPage 빼는 로직 곧 지운다.loader 에서 child page 처리 안할것이다.
+  // topLevelPages = topLevelPages.filter((page) => {
+  //   // 그렇지 않다면, 부모가 다른 페이지인지를 확인
+  //   // console.log('최 상위 페이지 찾기');
 
-    return true;
-  });
+  //   if (allPages.some((otherPage) => otherPage.id === page.parent?.page_id)) {
+  //     console.log('부모 페이지가 이미 존재함');
+  //     return false;
+  //   }
 
-  console.log(topLevelPages.length);
+  //   return true;
+  // });
 
-  // console.log(page.length);
-
-  // console.log(topLevelPages);
-
-  return [...topLevelPages, ...database];
-
-  // return allPages;
+  return allPages;
 };
 
-// const getNotionPageLoader = async (access_token, pageId, pageType) => {
-//   const client = new Client({ auth: access_token });
+const getNotionPageContent = async (access_token, pageId) => {
+  const notion = new Client({
+    auth: access_token,
+  });
 
-//   console.log(`pageType: ${pageType} \npageId: ${pageId}\n`);
+  // passing notion client to the option
+  const n2m = new NotionToMarkdown({
+    notionClient: notion,
+    config: {
+      parseChildPages: false, // default: parseChildPages
+    },
+  });
 
-//   const data = [];
+  const content = await n2m.pageToMarkdown(pageId);
+  const contentString = n2m.toMarkdownString(content);
 
-//   // Helper function to recursively get all pages and databases
-//   const getPageData = async (id, type) => {
-//     // If the block type is a database, fetch the data from the database
-//     // if (type === 'database') {
-//     //   // DO nothing for now
-//     //   const databaseResponse = await client.databases.retrieve({ database_id: id });
-//     //   const childrenData = await Promise.all(
-//     //     databaseResponse.results.map(async (item) => {
-//     //       if (item.object === 'page') {
-//     //         return getPageData(item.id, 'page');
-//     //       }
-//     //       return {
-//     //         id: item.id,
-//     //         type: item.object,
-//     //         data: item,
-//     //       };
-//     //     }),
-//     //   );
-//     //   return {
-//     //     id,
-//     //     type: 'database',
-//     //     data: childrenData,
-//     //   };
-//     // }
+  return contentString;
+};
 
-//     // If the block type is a page, fetch the page content
-//     if (type === 'page') {
-//       const pageResponse = await client.pages.retrieve({ page_id: id });
-//       console.log(pageResponse);
-//       // const childrenResponse = await client.blocks.children.list({ block_id: id });
-//       // const childrenData = await Promise.all(
-//       //   childrenResponse.results.map(async (child) => {
-//       //     if (child.type === 'child_page' || child.type === 'child_database') {
-//       //       return getPageData(child.id, child.type === 'child_page' ? 'page' : 'database');
-//       //     }
-//       //     return {
-//       //       id: child.id,
-//       //       type: child.type,
-//       //       data: child,
-//       //     };
-//       //   }),
-//       // );
-//       // return {
-//       //   id,
-//       //   type: 'page',
-//       //   data: childrenData,
-//       // };
-//     }
-
-//     return null;
-//   };
-
-//   const response = await getPageData(pageId, pageType);
-
-//   console.log(response);
-
-//   return response;
-// };
-
-export { getAccessToken, getNotionPages, getNotionPageLoader };
+export { getAccessToken, getNotionPages, getNotionPageContent };

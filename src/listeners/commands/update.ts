@@ -62,7 +62,7 @@ const updateCallback = async ({
 
       // console.log(page);
 
-      const notionData = await notionDataLoader(access_token, pageId, type, results);
+      const notionData = await notionDataLoader(access_token, page);
 
       // console.log(notionData);
 

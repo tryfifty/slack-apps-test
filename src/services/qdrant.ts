@@ -25,14 +25,16 @@ const deleteCollection = async (collectionName: string) => {
 };
 
 const insertVectorData = async (collectionName: string, vectorData: any[]) => {
-  await qdrant.upsert(collectionName, {
-    points: [
-      ...vectorData.map((data) => ({
+  const BATCH_SIZE = 1000; // 한 배치당 데이터 수
+  for (let i = 0; i < vectorData.length; i += BATCH_SIZE) {
+    const batch = vectorData.slice(i, i + BATCH_SIZE);
+    await qdrant.upsert(collectionName, {
+      points: batch.map((data) => ({
         id: v4(),
         ...data,
       })),
-    ],
-  });
+    });
+  }
 };
 
 // const searchByKeyword = async (collectionName: string, keyword: string) => {

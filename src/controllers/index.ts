@@ -15,7 +15,7 @@ import {
   insertNotionIntegrationInfo,
   upsertNotionConnection,
 } from '../services/supabase';
-import { getAccessToken, getNotionPageLoader, getNotionPages } from '../services/notion';
+import { getAccessToken, getNotionPages } from '../services/notion';
 import notionDataLoader from '../loaders/notionDataLoader';
 import split from '../splitters/notionDataSplitter';
 import embedding from '../embedders';
@@ -72,7 +72,7 @@ const controllers = (app: Express, slackApp: App) => {
       });
 
       // redirect to /update/notion with channel id and access token with post method
-      res.redirect(`/update/notion?team_id=${teamId}&user=${userId}&connection=${coneciton[0].id}`);
+      // res.redirect(`/update/notion?team_id=${teamId}&user=${userId}&connection=${coneciton[0].id}`);
     } catch (error) {
       console.error(error);
     }
@@ -140,12 +140,12 @@ const controllers = (app: Express, slackApp: App) => {
       /**
        * TODO: Should improve updating logic. (ig, versioning maybe?)
        */
-      // if (isCollectionExist(team_id as string)) {
-      //   console.log('Collection Delete');
-      //   await deleteCollection(team_id as string);
-      // }
+      if (isCollectionExist(team_id as string)) {
+        console.log('Collection Delete');
+        await deleteCollection(team_id as string);
+      }
 
-      // await createCollection(team_id as string);
+      await createCollection(team_id as string);
 
       const notionConnection = await getNotionConnection(team_id as string);
 
@@ -154,7 +154,8 @@ const controllers = (app: Express, slackApp: App) => {
 
       console.log(results.length);
 
-      let pages = [];
+      const pages = [];
+      // let i = 0;
 
       for (const page of results) {
         // console.log(page);
@@ -163,29 +164,35 @@ const controllers = (app: Express, slackApp: App) => {
 
         console.log(pageId, type);
 
-        const notionData: Document[] = await notionDataLoader(access_token, pageId, type, results);
+        const notionData: Document[] = await notionDataLoader(access_token, page);
 
-        fs.writeFileSync(`${pageId}.json`, JSON.stringify(notionData));
+        // fs.writeFileSync(`data/${pageId}-v4.json`, JSON.stringify(notionData));
 
         console.log(`processed ${pageId} pages`);
 
-        pages = [...pages, ...notionData];
+        pages.push(...notionData);
+        // i += 1;
+
+        // if (i > 10) {
+        //   break;
+        // }
       }
 
       console.log(pages.length);
 
       // // filter unique page with metadata.notionId
-      const uniquePages = pages.filter((page, index, self) => {
-        return index === self.findIndex((t) => t.metadata.notionId === page.metadata.notionId);
-      });
+      // const uniquePages = pages.filter((page, index, self) => {
+      //   return index === self.findIndex((t) => t.metadata.notionId === page.metadata.notionId);
+      // });
 
-      console.log(uniquePages.length);
+      // console.log(uniquePages.length);
 
       // for (const notionData of uniquePages) {
       // console.log(notionData.metadata.notionId);
       // console.log(notionData);
 
-      const pageDocs = await split(uniquePages);
+      const pageDocs = await split(pages);
+
       const texts = pageDocs.map((doc) => doc.pageContent);
 
       const vectors = await embedding(texts);
@@ -206,7 +213,9 @@ const controllers = (app: Express, slackApp: App) => {
           },
         });
       }
-      // await insertVectorData(team_id as string, vectorData);
+
+      // fs.writeFileSync(`data/${team_id}-vectors.json`, JSON.stringify(vectorData));
+      await insertVectorData(team_id as string, vectorData);
       // }
 
       // console.log(uniquePages);
