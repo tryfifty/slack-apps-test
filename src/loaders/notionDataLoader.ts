@@ -92,14 +92,17 @@ const notionDataLoader = async (access_token, page) => {
     const content = await getNotionPageContent(access_token, pageId);
     const summary = getNotionSummary(page);
 
-    const pageContent = summary + (content.parent === 'undefined' ? '' : content.parent);
+    const pageContent = summary + (content.parent || '');
 
     console.log(pageContent);
 
     return [
       new Document({
-        pageContent,
-        metadata: page,
+        pageContent: pageContent.trim(),
+        metadata: {
+          source: 'notion',
+          ...page,
+        },
       }),
     ];
   }

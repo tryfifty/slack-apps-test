@@ -22,17 +22,17 @@ const appHomeOpenedCallback = async ({
 
     const slackConnection: any = await getSlackConnection(slackTeam.team_id);
 
-    console.log('slackConnection', slackConnection);
+    // console.log('slackConnection', slackConnection);
 
     const notionConnection = await getNotionConnection(slackConnection[0].team_id);
 
-    console.log('notionData', notionConnection);
+    // console.log('notionData', notionConnection);
 
     const notionPages = notionConnection
       ? await getNotionIntegrationInfo(notionConnection.team_id)
       : [];
 
-    console.log('notionPages', notionPages);
+    // console.log('notionPages', notionPages);
 
     const state = encodeURIComponent(
       JSON.stringify({
@@ -42,7 +42,7 @@ const appHomeOpenedCallback = async ({
       }),
     );
 
-    console.log(state);
+    // console.log(state);
 
     await client.views.publish({
       user_id: event.user,

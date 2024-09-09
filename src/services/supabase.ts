@@ -284,6 +284,33 @@ const insertNotionIntegrationInfo = async (notionData) => {
   return notionPagesData;
 };
 
+const insertFigmaConnection = async (figmaData) => {
+  const { data: figmaConnections, error: figmaConnectionsError } = await supabaseClient
+    .from('FigmaConnections')
+    .upsert(figmaData, {
+      onConflict: 'team_id',
+    });
+
+  if (figmaConnectionsError) {
+    throw new Error(`Error inserting figma data: ${figmaConnectionsError.message}`);
+  }
+
+  return figmaConnections;
+};
+
+const getFigmaConnection = async (teamId: string) => {
+  const { data: figmaConnections, error: figmaConnectionsError } = await supabaseClient
+    .from('FigmaConnections')
+    .select()
+    .eq('team_id', teamId);
+
+  if (figmaConnectionsError) {
+    throw new Error(`Error getting figma connection: ${figmaConnectionsError.message}`);
+  }
+
+  return figmaConnections;
+};
+
 export default supabaseClient;
 export {
   getSlackConnection,
@@ -297,4 +324,6 @@ export {
   getNotionIntegrationInfo,
   deleteNotionIntegrationInfo,
   insertNotionIntegrationInfo,
+  insertFigmaConnection,
+  getFigmaConnection,
 };

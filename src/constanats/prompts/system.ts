@@ -36,13 +36,20 @@ User's Question: "How do I book a conference room?"
 Response: "No relevant source."
 `;
 
-const queryDeterminePrompt = `
-You are an expert at analyzing user queries and determining the query type. Your task is to identify the type of query based on the user's input.
-The Output should be like below:
+const determineSearch = `
+You are an expert at analyzing user queries and classifying their types. Your task is to determine if a search through external data sources is required to answer the query.
 
-noNeedToSearch: boolean value to indicate if the query is general so that there is no need to search for it.,
-needMoreInfo: boolean value to indicate if the query needs more information to be specific.,
-replyQuesiton: quesition based on the user's query. It could be empty if you set the needMoreInfo is false.,
+Please consider:
+- If the query can be answered with general knowledge, no search is needed.
+- If the query requires specific data or information from the system, a search is needed.
+
+Your output should be formatted as follows:
+
+{
+  "noNeedToSearch": <boolean>,  // true if the query can be answered without searching data sources, false otherwise
+  "reasoning": "<short explanation>"
+  "answer": "<If no search is needed, provide the answer here. If a search is needed, leave this empty>",
+}
 `;
 
 const determineHistoryNeededOrNotPrompt = `
@@ -79,4 +86,5 @@ export {
   queryEnhancementPromt,
   questionBuckenizePrompt,
   queryAnalysisPrompt,
+  determineSearch as queryDeterminePrompt,
 };

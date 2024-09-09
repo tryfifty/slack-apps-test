@@ -7,11 +7,18 @@ const qdrant = new QdrantClient({
 });
 
 const isCollectionExist = async (collectionName: string) => {
-  const { exists } = await qdrant.collectionExists(collectionName);
-  return exists;
+  console.log(`Checking if collection ${collectionName} exists...`);
+  try {
+    const { exists } = await qdrant.collectionExists(collectionName);
+    return exists;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
 };
 
 const createCollection = async (collectionName: string) => {
+  console.log(`Creating collection ${collectionName}...`);
   await qdrant.createCollection(collectionName, {
     vectors: {
       size: 1536, // OpenAIEmbeddings의 벡터 크기
@@ -25,6 +32,10 @@ const deleteCollection = async (collectionName: string) => {
 };
 
 const insertVectorData = async (collectionName: string, vectorData: any[]) => {
+  if (!(await isCollectionExist(collectionName))) {
+    await createCollection(collectionName);
+  }
+
   const BATCH_SIZE = 1000; // 한 배치당 데이터 수
   for (let i = 0; i < vectorData.length; i += BATCH_SIZE) {
     const batch = vectorData.slice(i, i + BATCH_SIZE);
@@ -50,6 +61,12 @@ const searchVectorData = async (collectionName: string, vector: number[]) => {
     vector,
     limit: 3,
   });
+
+  // const results = await qdrant.search(collectionName, {
+  //   vector,
+  //   with_vector: true,
+  // });
+
   return results;
 };
 

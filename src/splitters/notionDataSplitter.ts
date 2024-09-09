@@ -6,7 +6,7 @@ import { MarkdownTextSplitter } from '@langchain/textsplitters';
  * There are so many types in Notion Page.
  * How to handle them?
  */
-const chunkSize = 1000;
+const chunkSize = 500;
 const chunkOverlap = 100;
 
 const split = async (data: any) => {

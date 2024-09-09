@@ -6,7 +6,9 @@ const openai = new Openai({
   project: process.env.OPENAI_PROJECT_ID,
 });
 
-const { chat, embeddings } = wrapOpenAI(openai);
+const { chat, embeddings, beta } = wrapOpenAI(openai);
+
+// const { beta } = wrapOpenAI(openai);
 
 // export default openai;
-export { embeddings, chat };
+export { embeddings, chat, beta };

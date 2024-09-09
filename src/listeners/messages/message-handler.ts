@@ -3,12 +3,16 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 
 import slackify from 'slackify-markdown';
 import { AIMessage, HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { z } from 'zod';
+import { zodResponseFormat } from 'openai/helpers/zod';
 import { SlackChatHistoryRetriever } from '../../retrievers/slackChatHistoryRetriever';
 import messageConversation from '../../blocks/messageConversation';
 import { getSlackConnection } from '../../services/supabase';
 import { searchVectorData } from '../../services/qdrant';
 import embedding from '../../embedders';
-import { chat } from '../../services/openai';
+import { beta, chat } from '../../services/openai';
+import { queryAnalysisPrompt, questionBuckenizePrompt } from '../../constanats/prompts';
+import { queryDeterminePrompt } from '../../constanats/prompts/system';
 
 const messageHandler = async ({ context, message, event, say, client }) => {
   // console.log('Message received', event);
@@ -30,9 +34,58 @@ const messageHandler = async ({ context, message, event, say, client }) => {
       if (text.length !== 0) {
         // Initial message indicating bot is typing
         const typingMessage = await say({
-          text: 'Bot is typing...',
+          text: 'Macdal is typing...',
           thread_ts: message.ts,
         });
+
+        console.log(text);
+
+        const outputStructure = z.object({
+          noNeedToSearch: z.boolean(),
+          reasoning: z.string(),
+          answer: z.string(),
+        });
+
+        // Message Context
+        // const responseStructure = z.object({
+        //   query: z.array(z.string()),
+        //   noNeedToSearch: z.boolean(),
+        //   needMoreInfo: z.boolean(),
+        //   decomposition: z.boolean(),
+        //   expension: z.boolean(),
+        //   routing: z.array(z.string()),
+        //   generalization: z.boolean(),
+        // });
+
+        const completion = await beta.chat.completions.parse({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: queryDeterminePrompt,
+              name: 'system',
+            },
+            {
+              role: 'user',
+              content: text,
+              name: 'user',
+            },
+          ],
+          response_format: zodResponseFormat(outputStructure, 'outputStructure'),
+        });
+
+        console.log(completion.choices[0].message);
+
+        const { parsed } = completion.choices[0].message;
+
+        if (parsed.noNeedToSearch) {
+          await client.chat.update({
+            channel: event.channel,
+            ts: typingMessage.ts,
+            text: parsed.answer,
+          });
+          return;
+        }
 
         const chatHistoryRetriever = new SlackChatHistoryRetriever({
           slackApp: client,
@@ -45,7 +98,7 @@ const messageHandler = async ({ context, message, event, say, client }) => {
           message.user,
         );
 
-        console.log('slackConverationHistory', slackConverationHistory);
+        // console.log('slackConverationHistory', slackConverationHistory);
 
         const slackConnection = await getSlackConnection(message.team as string);
         // console.log('slackConnection', slackConnection);
@@ -53,11 +106,125 @@ const messageHandler = async ({ context, message, event, say, client }) => {
 
         const query = await embedding(text);
 
-        // console.log('query', query);
+        const searchResult = await searchVectorData(`${team_id}-source`, query[0]);
 
-        const searchReuslt = await searchVectorData(team_id, query[0]);
+        const promptTemplate = await pull<ChatPromptTemplate>('macdal-rag');
 
-        console.log(searchReuslt);
+        const generateContext = {
+          previousMessages: slackConverationHistory,
+          searchResult: searchResult.map((r, i) => `#${i} result: \n ${r.payload?.content || ''}`),
+        };
+
+        const prompt = await promptTemplate.invoke({
+          context: JSON.stringify(generateContext),
+          question: text,
+        });
+
+        console.log('prompt', prompt);
+
+        const messages: any = prompt.messages.map((m) => {
+          let role: string;
+          let name: string;
+
+          if (m instanceof SystemMessage) {
+            role = 'system';
+            name = 'macdal';
+          } else if (m instanceof HumanMessage) {
+            role = 'user';
+            name = 'user';
+          } else if (m instanceof AIMessage) {
+            role = 'assistant';
+            name = 'assistant';
+          } else {
+            throw new Error('Unknown message type');
+          }
+
+          return {
+            role,
+            content: m.content as string,
+            name,
+          };
+        });
+
+        const llmResponse = await chat.completions.create({
+          model: 'gpt-4o',
+          messages,
+        });
+
+        const answer = llmResponse.choices[0].message.content;
+
+        const slackifiedResult = slackify(answer);
+
+        await client.chat.update({
+          channel: event.channel,
+          ts: typingMessage.ts,
+          text: slackifiedResult,
+          blocks: messageConversation(slackifiedResult, searchResult),
+        });
+
+        /**
+        const chatHistoryRetriever = new SlackChatHistoryRetriever({
+          slackApp: client,
+          channel: message.channel,
+          ts: message.thread_ts || message.ts,
+        });
+
+        const slackConverationHistory = await chatHistoryRetriever.retreiveChatHistory(
+          !message.thread_ts,
+          message.user,
+        );
+
+        // console.log('slackConverationHistory', slackConverationHistory);
+
+        const slackConnection = await getSlackConnection(message.team as string);
+        // console.log('slackConnection', slackConnection);
+        const { team_id } = slackConnection[0];
+        // TODO:: Making more precise query??
+
+        // Buketize the query
+
+        // const bucketRes = z.object({
+        //   source: z.array(z.string()),
+        // });
+
+        // const completion = await beta.chat.completions.parse({
+        //   model: 'gpt-4o-mini',
+        //   messages: [
+        //     {
+        //       role: 'user',
+        //       content: questionBuckenizePrompt(text),
+        //       name: 'user',
+        //     },
+        //   ],
+        //   response_format: zodResponseFormat(bucketRes, 'bucketRes'),
+        // });
+
+        // const desciptions = completion.choices[0].message;
+        // console.log(desciptions);
+
+        // let sources = [];
+        // if (desciptions.parsed) {
+        //   sources = desciptions.parsed.source;
+        // }
+
+        const query = await embedding(text);
+        // console.log(query);
+
+        const searchResult = await searchVectorData(`${team_id}-source`, query[0]);
+
+        // if (sources.includes('Notion')) {
+        //   console.log('Search Notion');
+        //   searchResult = [...searchResult, ...(await searchVectorData(team_id, query[0]))];
+        // }
+
+        // if (sources.includes('Figma')) {
+        //   console.log('Search Figma');
+        //   searchResult = [...searchResult, ...(await searchVectorData('figma_test', query[0]))];
+        // }
+
+        for (const result of searchResult) {
+          console.log(result.payload?.metadata);
+        }
 
         // await client.chat.update({
         //   channel: event.channel,
@@ -72,7 +239,7 @@ const messageHandler = async ({ context, message, event, say, client }) => {
 
         const generateContext = {
           previousMessages: slackConverationHistory,
-          searchResult: searchReuslt.map((r, i) => `#${i} result: \n ${r.payload.content}`),
+          searchResult: searchResult.map((r, i) => `#${i} result: \n ${r.payload?.content || ''}`),
         };
 
         const prompt = await promptTemplate.invoke({
@@ -128,8 +295,9 @@ const messageHandler = async ({ context, message, event, say, client }) => {
           channel: event.channel,
           ts: typingMessage.ts,
           text: slackifiedResult,
-          blocks: messageConversation(slackifiedResult),
+          blocks: messageConversation(slackifiedResult, searchResult),
         });
+         */
       }
     } catch (error) {
       console.error(error);

@@ -1,5 +1,6 @@
 import { App, LogLevel } from '@slack/bolt';
 import * as dotenv from 'dotenv';
+import path from 'path';
 import Express from 'express';
 import registerListeners from './listeners';
 import registControllers from './controllers';
@@ -10,6 +11,7 @@ import {
   upsertSlackConnection,
 } from './services/supabase';
 import msgWelcome from './blocks/messageWelcome';
+// import runworker from './data-processor/processor';
 
 // dotenv.config();
 
@@ -22,7 +24,7 @@ import msgWelcome from './blocks/messageWelcome';
 // });
 
 // For development purposes only
-const tempDB = new Map();
+// runworker();
 
 const slackApp = new App({
   logLevel: LogLevel.DEBUG,
@@ -127,6 +129,16 @@ const slackApp = new App({
 registerListeners(slackApp);
 
 const expressApp = Express();
+
+// Parse JSON bodies
+expressApp.use(
+  Express.json({
+    limit: '10mb',
+  }),
+);
+
+// Serve static files from the "html" directory
+expressApp.use(Express.static(path.join(__dirname, 'views')));
 
 registControllers(expressApp, slackApp);
 

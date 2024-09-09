@@ -73,24 +73,24 @@ const appHomeInitialBlocks = ({
         },
       ],
     },
-    ...(notionConnectionStatus && notionPages.length > 0
-      ? [
-          {
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text: '*Connected Notion Pages*:',
-            },
-          },
-          {
-            type: 'context',
-            elements: notionPages.map((page) => ({
-              type: 'mrkdwn',
-              text: `${page}`,
-            })),
-          },
-        ]
-      : []),
+    // ...(notionConnectionStatus && notionPages.length > 0
+    //   ? [
+    //       {
+    //         type: 'section',
+    //         text: {
+    //           type: 'mrkdwn',
+    //           text: '*Connected Notion Pages*:',
+    //         },
+    //       },
+    //       {s
+    //         type: 'context',
+    //         elements: notionPages.map((page) => ({
+    //           type: 'mrkdwn',
+    //           text: `${page}`,
+    //         })),
+    //       },
+    //     ]
+    //   : []),
     {
       type: 'section',
       text: {
@@ -107,7 +107,7 @@ const appHomeInitialBlocks = ({
             type: 'plain_text',
             text: `${figmaConnectionStatus ? '🔗 Change Figma Workspace' : '🎨 Connect Figma'}`,
           },
-          url: `https://www.figma.com/oauth?response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Ffigma%2Fcallback&state=${state}`,
+          url: `https://www.figma.com/oauth?response_type=code&client_id=kgLJAtKeyl6GfypeAVLpWI&redirect_uri=https%3A%2F%2Fgreat-yaks-wish.loca.lt%2Ffigma%2Fcallback&scope=files:read&state=${state}`,
           action_id: 'figma_auth_button',
         },
       ],
